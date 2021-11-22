@@ -1,8 +1,12 @@
-const int MAX_PLAYERS = 4;
+/* 
+Script made for CMJ 2, for my map "Popo and Nana".
+Thank you to Skyhawk, Avenged, Spiraler, and jdude for their help.
+http://atlas.dustforce.com/10977/popo-and-nana
+*/
 
 class script {
     scene@ g;
-    array <dustman@> players(MAX_PLAYERS, null);
+    array <dustman@> players(4, null);
 	bool singleplayer = true;
     entity@ nana = null;
 	dustman@ popo;
