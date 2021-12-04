@@ -17,13 +17,6 @@ class script {
 	bool checkpointed = false;
 	bool hidetext = false;
 	
-	
-	//COMPARISON STUFF
-	[boolean|tooltip:"Enable to compare to vanilla HUD"]
-    bool compare = false;
-	float offset_x = 0;
-	float offset_y = 0;
-	
 	//HUD OPTIONS
 	[boolean|tooltip:"COMBO text"]
     bool HUD_COMBO_LABEL = true;
@@ -152,8 +145,8 @@ class script {
 		if (not hidetext) {
 			//TIME
 			if (HUD_TIME) {
-				float time_x = corner_x + 285+offset_x;
-				float time_y = corner_y - 15-offset_y;
+				float time_x = corner_x + 285;
+				float time_y = corner_y - 15;
 				text_time.colour(fade_uint);
 				if (d.dead() || (get_time_us() - time_cp) < 500000) { //PUSHES TIMER TO HIGHER LAYER WHEN DEAD AND RESPAWNING
 					ct.layer(5);
@@ -169,21 +162,21 @@ class script {
 			
 			//COMBO LABEL
 			if (HUD_COMBO_LABEL) {
-				float label_x = corner_x + 15+offset_x;
-				float label_y = corner_y - 110.5-offset_y;
+				float label_x = corner_x + 15;
+				float label_y = corner_y - 110.5;
 				text_label.colour(fade_uint);
 				c.draw_text(text_label, label_x, label_y, 1, 1, -15);
 			}
 		}
 		
 		//SUPERBAR - REGULAR
-		float superbar_x = corner_x + 136+offset_x;
-		float superbar_y = corner_y - 35-offset_y;
+		float superbar_x = corner_x + 136;
+		float superbar_y = corner_y - 35;
 		if (HUD_METER) {
 			c.draw_sprite(supersprites, "specialmeterback", 0, 0, superbar_x, superbar_y, 0, 1, 1, fade_uint);
 
 			if (superpos > -122) {
-				c.draw_quad(false, superbar_x - 116, superbar_y + 17, superbar_x - 116, superbar_y - 15, superbar_x + superpos + 6, superbar_y - 15, superbar_x + superpos + 6, superbar_y + 17, fade_uint, fade_uint, fade_uint, fade_uint);
+				c.draw_rectangle(superbar_x - 116, superbar_y + 17, superbar_x + superpos + 6, superbar_y - 15, 0, fade_uint);
 				string superend = charcode + "special";
 				c.draw_sprite(supersprites, superend, 0, 0, superbar_x + superpos, superbar_y, 0, 1, 1, fade_uint);
 			}
@@ -196,8 +189,8 @@ class script {
 		}
 		
 		//COMBO NUMBER
-		combo_x = corner_x + 120 + shake_x+offset_x;
-		combo_y = corner_y - 88.5 + shake_y-offset_y;
+		combo_x = corner_x + 120 + shake_x;
+		combo_y = corner_y - 88.5 + shake_y;
 		text_combo.colour(combo_uint);
 		if (HUD_COMBO_NUM) {
 			if (combo_int > 0 && blink && not hidetext) {
@@ -447,16 +440,7 @@ class script {
 	}
 	
 	void initialize() {
-		//USE CHECKMARK TO VISUALLY COMPARE TO VANILLA HUD
-		if (not compare) {
-			g.disable_score_overlay(true);
-			offset_x = 0;
-			offset_y = 0;
-		} else {
-			g.disable_score_overlay(false);
-			offset_x = 400;
-			offset_y = 0;
-		}
+		g.disable_score_overlay(true);
 		
 		//COMBO NUMBER RESETTING
 		shake_x = 0;
