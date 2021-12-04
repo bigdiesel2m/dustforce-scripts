@@ -2,7 +2,7 @@
 Silly little script I made that turns the game sideways.
 Most of the work in making this script was in replicating the game HUD, since rotating the camera is easy.
 In-game cameras tend to break with this script, so if you want to play in a level not designed for vertical camera, I suggest turning on "Free Camera Mode" or turning on Frame Advance and zooming out.
-For a version of this script that replaces the HUD but doesn't rotate everything sideways, check <insert other filename here>.
+For a version of this script that replaces the HUD but doesn't rotate everything sideways, check hudreplace.as.
 */
 class script {
     scene@ g;
