@@ -96,13 +96,13 @@ class script {
 		}
 		
 		//PARTICLE STUFF
-		for(int i = 0; i < particles_far.length; i++) {
+		for(uint i = 0; i < particles_far.length; i++) {
 			particles_far[i].step();
 		}
-		for(int i = 0; i < particles_mid.length; i++) {
+		for(uint i = 0; i < particles_mid.length; i++) {
 			particles_mid[i].step();
 		}
-		for(int i = 0; i < particles_near.length; i++) {
+		for(uint i = 0; i < particles_near.length; i++) {
 			particles_near[i].step();
 		}
 		if ((rand() % 5) == 0) {
@@ -145,13 +145,13 @@ class script {
 		c.draw_rectangle(805,-350,350,-455,0,0xFF000000);
 		
 		//PARTICLE STUFF
-		for(int i = 0; i < particles_far.length; i++) {
+		for(uint i = 0; i < particles_far.length; i++) {
 			particles_far[i].draw(@g, cam.x(), cam.y(), flipped);
 		}
-		for(int i = 0; i < particles_mid.length; i++) {
+		for(uint i = 0; i < particles_mid.length; i++) {
 			particles_mid[i].draw(@g, cam.x(), cam.y(), flipped);
 		}
-		for(int i = 0; i < particles_near.length; i++) {
+		for(uint i = 0; i < particles_near.length; i++) {
 			particles_near[i].draw(@g, cam.x(), cam.y(), flipped);
 		}
 		
@@ -184,13 +184,13 @@ class script {
 		gridcheck();
 		camera_update();
 		
-		for(int i = 0; i < particles_far.length; i++) {
+		for(uint i = 0; i < particles_far.length; i++) {
 			particles_far[i].init(0);
 		}
-		for(int i = 0; i < particles_mid.length; i++) {
+		for(uint i = 0; i < particles_mid.length; i++) {
 			particles_mid[i].init(1);
 		}
-		for(int i = 0; i < particles_near.length; i++) {
+		for(uint i = 0; i < particles_near.length; i++) {
 			particles_near[i].init(2);
 		}
 	}
@@ -226,6 +226,26 @@ class script {
 			run_tile_detection();
 			detect_tiles = false;
 			editor_sync_vars_menu();
+		}
+	}
+
+	void editor_draw(float sub_frame) {
+		for(int gx = min_grid_x; gx <= max_grid_x; gx++) {
+			for(int gy = min_grid_y; gy <= max_grid_y; gy++) {
+				int x1 =  gx * cam_width - (cam_width/2);
+				int x2 =  gx * cam_width + (cam_width/2);
+				int y1 =  gy * grid_height - (grid_height/2);
+				int y2 =  gy * grid_height + (grid_height/2);
+				int y3 =  gy * grid_height - (cam_height/2);
+				int y4 =  gy * grid_height + (cam_height/2);
+
+				g.draw_line_world(20, 20, x1, y1, x2, y1, 5, 0xFFFFFFFF);
+				g.draw_line_world(20, 20, x1, y2, x2, y2, 5, 0xFFFFFFFF);
+				g.draw_line_world(20, 20, x1, y3, x2, y3, 5, 0xFFFFFFFF);
+				g.draw_line_world(20, 20, x1, y4, x2, y4, 5, 0xFFFFFFFF);
+				g.draw_line_world(20, 20, x1, y1, x1, y2, 5, 0xFFFFFFFF);
+				g.draw_line_world(20, 20, x2, y1, x2, y2, 5, 0xFFFFFFFF);
+			}
 		}
 	}
 	
@@ -326,7 +346,7 @@ class Room {
 	}
 	
 	void draw_tile_pattern(scene@ g, sprites@ spr, array<Pos> tiles, string pattern, uint32 c_pattern, uint32 c_edge, int layer, bool flipped) {
-		for(int i = 0; i < tiles.length; i++) {
+		for(uint i = 0; i < tiles.length; i++) {
 			if (!flipped) {
 				spr.draw_world(layer, 19, pattern, 0, 0, 48*tiles[i].x - 1, 48*tiles[i].y, 0, 0.50, 0.50, c_pattern);
 			} else {
