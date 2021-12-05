@@ -295,11 +295,11 @@ class script {
 }
 
 class Room {
-	[text] int y_coord = 0;
-	[text] int hue = 30;
-	[text] string pattern = "tile3";
-	[text] string bg_pattern = "tile5";
-	[text] array<Pos> tiles;
+	[hidden] int y_coord = 0;
+	[text|tooltip:"Hue angle, from 0 to 359"] int hue = 30;
+	[option,1:1,2:2,3:3,4:4,5:5] int pattern = 3;
+	[option,1:1,2:2,3:3,4:4,5:5] int bg_pattern = 5;
+	[hidden] array<Pos> tiles;
 	[hidden] array<Pos> bg_tiles;
 	
 	uint32 tile_rgb = 0;
@@ -354,16 +354,16 @@ class Room {
 		draw_tile_pattern(@g, @spr, bg_tiles, bg_pattern, get_bg_tile_rgb(), get_bg_edge_rgb(), 15, flipped);
 	}
 	
-	void draw_tile_pattern(scene@ g, sprites@ spr, array<Pos> tiles, string pattern, uint32 c_pattern, uint32 c_edge, int layer, bool flipped) {
+	void draw_tile_pattern(scene@ g, sprites@ spr, array<Pos> tiles, int pattern, uint32 c_pattern, uint32 c_edge, int layer, bool flipped) {
 		//FIND TILE Y VALUE MIDWAY BETWEEN FLIPPED AND NONFLIPPED VERSIONS OF THE ROOM
 		int room_ht = (cam_height + y_buffer) / 48;
 		int midy = (y_coord * room_ht) - room_ht/2;
 		for(uint i = 0; i < tiles.length; i++) {
 			//PATTERN DRAWING
 			if (!flipped) {
-				spr.draw_world(layer, 19, pattern, 0, 0, 48*tiles[i].x - 1, 48*tiles[i].y, 0, 0.50, 0.50, c_pattern);
+				spr.draw_world(layer, 19, "tile"+pattern, 0, 0, 48*tiles[i].x - 1, 48*tiles[i].y, 0, 0.50, 0.50, c_pattern);
 			} else {
-				spr.draw_world(layer, 19, pattern, 0, 0, 48*tiles[i].x - 1, 48*(2*midy - tiles[i].y), 0, 0.50, -0.50, c_pattern);
+				spr.draw_world(layer, 19, "tile"+pattern, 0, 0, 48*tiles[i].x - 1, 48*(2*midy - tiles[i].y), 0, 0.50, -0.50, c_pattern);
 			}
 			
 			//EDGE DRAWING
