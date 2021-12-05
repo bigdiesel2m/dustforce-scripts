@@ -137,7 +137,7 @@ class script {
 		//CAMERA STUFF
 		gridcheck();
 		
-		current_room = floor(((max_grid_y - min_grid_y + 1)*(grid_x - min_grid_x) + (grid_y - min_grid_y))/2);
+		current_room = int(floor(((max_grid_y - min_grid_y + 1)*(grid_x - min_grid_x) + (grid_y - min_grid_y))/2));
 		room_tiles[current_room].step(@cam, @fog);
 	}
 	
@@ -205,8 +205,8 @@ class script {
 	void gridcheck() {
 		int old_grid_x = grid_x;
 		int old_grid_y = grid_y;
-		grid_x = floor((dm.x() + (cam_width/2)) / cam_width);
-		grid_y = floor((dm.y() + grid_height/2) / grid_height);
+		grid_x = int(floor((dm.x() + (cam_width/2)) / cam_width));
+		grid_y = int(floor((dm.y() + grid_height/2) / grid_height));
 		if (old_grid_x != grid_x || old_grid_y != grid_y) {
 			camera_update();
 		}
@@ -239,12 +239,12 @@ class script {
 	void editor_draw(float sub_frame) {
 		for(int gx = min_grid_x; gx <= max_grid_x; gx++) {
 			for(int gy = min_grid_y; gy <= max_grid_y; gy++) {
-				int x1 =  gx * cam_width - (cam_width/2);
-				int x2 =  gx * cam_width + (cam_width/2);
-				int y1 =  gy * grid_height - (grid_height/2);
-				int y2 =  gy * grid_height + (grid_height/2);
-				int y3 =  gy * grid_height - (cam_height/2);
-				int y4 =  gy * grid_height + (cam_height/2);
+				float x1 =  gx * cam_width - (cam_width/2);
+				float x2 =  gx * cam_width + (cam_width/2);
+				float y1 =  gy * grid_height - (grid_height/2);
+				float y2 =  gy * grid_height + (grid_height/2);
+				float y3 =  gy * grid_height - (cam_height/2);
+				float y4 =  gy * grid_height + (cam_height/2);
 
 				g.draw_line_world(20, 20, x1, y1, x2, y1, 5, 0xFFFFFFFF);
 				g.draw_line_world(20, 20, x1, y2, x2, y2, 5, 0xFFFFFFFF);
@@ -262,8 +262,8 @@ class script {
 		tileinfo@ tb;
 		
 		//TURNING EXISTING VARIABLES INTO INTS
-		int room_width = cam_width/48;
-		int room_height = grid_height/48;
+		int room_width = int(cam_width/48);
+		int room_height = int(grid_height/48);
 		
 		room_tiles.resize(0);
 		for(int gx = min_grid_x; gx <= max_grid_x; gx++) {
@@ -493,7 +493,7 @@ uint32 hsv_to_rgb(float hue, float sat, float val) {
 	float rp = 0;
 	float gp = 0;
 	float bp = 0;
-	int hi = floor(hs);
+	int hi = int(floor(hs));
 	switch(hi) {
 		case 0:
 			rp = c;
@@ -520,9 +520,9 @@ uint32 hsv_to_rgb(float hue, float sat, float val) {
 			bp = x;
 			break;
 	}
-	int r = floor((rp+m)*255 + 0.5);
-	int g = floor((gp+m)*255 + 0.5);
-	int b = floor((bp+m)*255 + 0.5);
+	int r = int(floor((rp+m)*255 + 0.5));
+	int g = int(floor((gp+m)*255 + 0.5));
+	int b = int(floor((bp+m)*255 + 0.5));
 	uint32 rgb = 0xFF000000 + (r << 16) + (g << 8) + b;
-	return rgb;
+	return 0xFF000000 + (r << 16) + (g << 8) + b;
 }
