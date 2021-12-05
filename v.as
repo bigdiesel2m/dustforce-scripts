@@ -175,7 +175,12 @@ class script {
 	
 	void initialize() {
 		spr.add_sprite_set("script");
+		//Not relevant for a nexus, but if I want to make a custom level with this script I'll make a custom HUD as well that doesn't get split by the black bar on the left
 		g.disable_score_overlay(true);
+		//Swaps the entity layer behind layer 17 so we can use layer 17 as fake opaqueness for layer 19
+		g.reset_layer_order();
+		g.swap_layer_order(17, 18);
+		
 		@dm = controller_entity(0).as_dustman();
 		@cam = get_camera(0);
 		@fog = cam.get_fog();
