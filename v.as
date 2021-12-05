@@ -8,6 +8,11 @@ const float cam_height = 1152;
 const float cam_width = 1536;
 const float y_buffer = 192;
 
+const int min_grid_x = -1;
+const int max_grid_x = 1;
+const int min_grid_y = -1;
+const int max_grid_y = 2;
+
 class script {
 	scene@ g;
 	dustman@ dm;
@@ -28,10 +33,6 @@ class script {
 	//TILE STUFF
 	[text] array<Room> room_tiles;
 	[boolean] bool detect_tiles = false;
-	int min_grid_x = -1;
-	int max_grid_x = 1;
-	int min_grid_y = -1;
-	int max_grid_y = 2;
 	sprites@ spr;
 	
 	//PARTICLE STUFF
@@ -41,6 +42,8 @@ class script {
 	int step_far = 0;
 	int step_mid = 0;
 	int step_near = 0;
+	
+	int current_room = 2;
 	
 	script() {
 		@g = get_scene();
@@ -134,7 +137,7 @@ class script {
 		//CAMERA STUFF
 		gridcheck();
 		
-		int current_room = ((max_grid_y - min_grid_y + 1)*(grid_x - min_grid_x) + (grid_y - min_grid_y));
+		current_room = floor(((max_grid_y - min_grid_y + 1)*(grid_x - min_grid_x) + (grid_y - min_grid_y))/2);
 		room_tiles[current_room].step(@cam, @fog);
 	}
 	
@@ -156,7 +159,6 @@ class script {
 		}
 		
 		//TILE PATTERN STUFF
-		int current_room = ((max_grid_y - min_grid_y + 1)*(grid_x - min_grid_x) + (grid_y - min_grid_y));
 		room_tiles[current_room].draw(@g, @spr, flipped);
 		
 		//TEST STUFF
@@ -265,7 +267,7 @@ class script {
 		
 		room_tiles.resize(0);
 		for(int gx = min_grid_x; gx <= max_grid_x; gx++) {
-			for(int gy = min_grid_y; gy <= max_grid_y; gy++) {
+			for(int gy = min_grid_y + 1; gy <= max_grid_y; gy+=2) {
 				room = Room();
 				for(int tx = 0; tx < room_width; tx++) {
 					for(int ty = 0; ty < room_height; ty++) {
@@ -285,6 +287,7 @@ class script {
 						}
 					}
 				}
+				room.y_coord = gy;
 				room_tiles.insertLast(room);
 			}
 		}
@@ -292,10 +295,11 @@ class script {
 }
 
 class Room {
+	[text] int y_coord = 0;
 	[text] int hue = 30;
 	[text] string pattern = "tile3";
 	[text] string bg_pattern = "tile5";
-	[hidden] array<Pos> tiles;
+	[text] array<Pos> tiles;
 	[hidden] array<Pos> bg_tiles;
 	
 	uint32 tile_rgb = 0;
@@ -351,31 +355,54 @@ class Room {
 	}
 	
 	void draw_tile_pattern(scene@ g, sprites@ spr, array<Pos> tiles, string pattern, uint32 c_pattern, uint32 c_edge, int layer, bool flipped) {
+		//FIND TILE Y VALUE MIDWAY BETWEEN FLIPPED AND NONFLIPPED VERSIONS OF THE ROOM
+		int room_ht = (cam_height + y_buffer) / 48;
+		int midy = (y_coord * room_ht) - room_ht/2;
 		for(uint i = 0; i < tiles.length; i++) {
+			//PATTERN DRAWING
 			if (!flipped) {
 				spr.draw_world(layer, 19, pattern, 0, 0, 48*tiles[i].x - 1, 48*tiles[i].y, 0, 0.50, 0.50, c_pattern);
 			} else {
-				spr.draw_world(layer, 19, pattern, 0, 0, 48*tiles[i].x - 1, 48*tiles[i].y + 48, 0, 0.50, -0.50, c_pattern);
+				spr.draw_world(layer, 19, pattern, 0, 0, 48*tiles[i].x - 1, 48*(2*midy - tiles[i].y), 0, 0.50, -0.50, c_pattern);
 			}
-				
+			
+			//EDGE DRAWING
 			int horizontal_left = 48*tiles[i].x;
 			int horizontal_right = 48*tiles[i].x + 48;
-			
-			if (tiles[i].e & 2 > 0) { //LEFT
-				g.draw_rectangle_world(layer, 20, 48*tiles[i].x - 1, 48*tiles[i].y - 1, 48*tiles[i].x + 12, 48*tiles[i].y + 49, 0, c_edge);
+			if (!flipped) {
+				if (tiles[i].e & 2 > 0) { //LEFT
+					g.draw_rectangle_world(layer, 20, 48*tiles[i].x - 1, 48*tiles[i].y - 1, 48*tiles[i].x + 12, 48*tiles[i].y + 49, 0, c_edge);
+				} else {
+					horizontal_left = horizontal_left - 12;
+				}
+				if (tiles[i].e & 1 > 0) { //RIGHT
+					g.draw_rectangle_world(layer, 20, 48*tiles[i].x + 49, 48*tiles[i].y - 1, 48*tiles[i].x + 36, 48*tiles[i].y + 49, 0, c_edge);
+				} else {
+					horizontal_right = horizontal_right + 12;
+				}
+				if (tiles[i].e & 8 > 0) {
+					g.draw_rectangle_world(layer, 20, horizontal_left, 48*tiles[i].y -1, horizontal_right, 48*tiles[i].y + 12, 0, c_edge);
+				}
+				if (tiles[i].e & 4 > 0) {
+					g.draw_rectangle_world(layer, 20, horizontal_left, 48*tiles[i].y + 49, horizontal_right, 48*tiles[i].y + 36, 0, c_edge);
+				}
 			} else {
-				horizontal_left = horizontal_left - 12;
-			}
-			if (tiles[i].e & 1 > 0) { //RIGHT
-				g.draw_rectangle_world(layer, 20, 48*tiles[i].x + 49, 48*tiles[i].y - 1, 48*tiles[i].x + 36, 48*tiles[i].y + 49, 0, c_edge);
-			} else {
-				horizontal_right = horizontal_right + 12;
-			}
-			if (tiles[i].e & 8 > 0) {
-				g.draw_rectangle_world(layer, 20, horizontal_left, 48*tiles[i].y -1, horizontal_right, 48*tiles[i].y + 12, 0, c_edge);
-			}
-			if (tiles[i].e & 4 > 0) {
-				g.draw_rectangle_world(layer, 20, horizontal_left, 48*tiles[i].y + 49, horizontal_right, 48*tiles[i].y + 36, 0, c_edge);
+				if (tiles[i].e & 2 > 0) { //LEFT
+					g.draw_rectangle_world(layer, 20, 48*tiles[i].x - 1, 48*(2*midy - tiles[i].y) - 49, 48*tiles[i].x + 12, 48*(2*midy - tiles[i].y) + 1, 0, c_edge);
+				} else {
+					horizontal_left = horizontal_left - 12;
+				}
+				if (tiles[i].e & 1 > 0) { //RIGHT
+					g.draw_rectangle_world(layer, 20, 48*tiles[i].x + 49, 48*(2*midy - tiles[i].y) - 49, 48*tiles[i].x + 36, 48*(2*midy - tiles[i].y) + 1, 0, c_edge);
+				} else {
+					horizontal_right = horizontal_right + 12;
+				}
+				if (tiles[i].e & 8 > 0) {
+					g.draw_rectangle_world(layer, 20, horizontal_left, 48*(2*midy - tiles[i].y) - 12, horizontal_right, 48*(2*midy - tiles[i].y) + 1, 0, c_edge);
+				}
+				if (tiles[i].e & 4 > 0) {
+					g.draw_rectangle_world(layer, 20, horizontal_left, 48*(2*midy - tiles[i].y) - 36, horizontal_right, 48*(2*midy - tiles[i].y) - 49, 0, c_edge);
+				}
 			}
 		}
 	}
