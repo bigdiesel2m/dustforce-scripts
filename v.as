@@ -3,6 +3,7 @@ const string EMBED_tile2 = "vsprites/tile2.png";
 const string EMBED_tile3 = "vsprites/tile3.png";
 const string EMBED_tile4 = "vsprites/tile4.png";
 const string EMBED_tile5 = "vsprites/tile5.png";
+const string EMBED_door = "vsprites/door.png";
 
 const float cam_height = 1152;
 const float cam_width = 1536;
@@ -10,8 +11,8 @@ const float y_buffer = 192;
 
 const int min_grid_x = -1;
 const int max_grid_x = 1;
-const int min_grid_y = -1;
-const int max_grid_y = 2;
+const int min_grid_y = -3;
+const int max_grid_y = 4;
 
 class script {
 	scene@ g;
@@ -65,6 +66,7 @@ class script {
 		msg.set_string("tile3", "tile3");
 		msg.set_string("tile4", "tile4");
 		msg.set_string("tile5", "tile5");
+		msg.set_string("door", "door");
 	}
 	
 	
@@ -269,6 +271,7 @@ class script {
 		for(int gx = min_grid_x; gx <= max_grid_x; gx++) {
 			for(int gy = min_grid_y + 1; gy <= max_grid_y; gy+=2) {
 				room = Room();
+				//TILE DETECTION AND STORAGE
 				for(int tx = 0; tx < room_width; tx++) {
 					for(int ty = 0; ty < room_height; ty++) {
 						int tile_x = gx * room_width - (room_width/2) + tx;
@@ -287,6 +290,21 @@ class script {
 						}
 					}
 				}
+				//DOOR DETECTION AND STORAGE
+				int entint = g.get_entity_collision(gy * grid_height - (3*grid_height/2), gy * grid_height + (grid_height/2), gx * cam_width - cam_width/2, gx * cam_width + cam_width/2, 16);
+				for(uint j=0; j < entint; j++) {
+					entity@ CurrentEntity = g.get_entity_collision_index(j);
+					if (CurrentEntity.type_name() == "level_door") {
+						if (CurrentEntity.y() > gy * grid_height - grid_height/2) {
+							Pos p = Pos(int(CurrentEntity.x()),int(CurrentEntity.y()), 0);
+							room.doors.insertLast(p);
+						} else {
+							Pos p = Pos(int(CurrentEntity.x()),int(2*(gy * grid_height - grid_height/2) - CurrentEntity.y()), 1);
+							room.doors.insertLast(p);
+						}
+					}
+				}
+
 				room.y_coord = gy;
 				room_tiles.insertLast(room);
 			}
@@ -301,6 +319,7 @@ class Room {
 	[option,1:1,2:2,3:3,4:4,5:5] int bg_pattern = 5;
 	[hidden] array<Pos> tiles;
 	[hidden] array<Pos> bg_tiles;
+	[text] array<Pos> doors;
 	
 	uint32 tile_rgb = 0;
 	uint32 edge_rgb = 0;
@@ -352,6 +371,7 @@ class Room {
 	void draw(scene@ g, sprites@ spr, bool flipped) {
 		draw_tile_pattern(@g, @spr, tiles, pattern, get_tile_rgb(), get_edge_rgb(), 19, flipped);
 		draw_tile_pattern(@g, @spr, bg_tiles, bg_pattern, get_bg_tile_rgb(), get_bg_edge_rgb(), 15, flipped);
+		draw_door_sprites(@g, @spr, doors, 18, flipped);
 	}
 	
 	void draw_tile_pattern(scene@ g, sprites@ spr, array<Pos> tiles, int pattern, uint32 c_pattern, uint32 c_edge, int layer, bool flipped) {
@@ -402,6 +422,26 @@ class Room {
 				}
 				if (tiles[i].e & 4 > 0) {
 					g.draw_rectangle_world(layer, 20, horizontal_left, 48*(2*midy - tiles[i].y) - 36, horizontal_right, 48*(2*midy - tiles[i].y) - 49, 0, c_edge);
+				}
+			}
+		}
+	}
+
+	void draw_door_sprites(scene@ g, sprites@ spr, array<Pos> doors, int layer, bool flipped) {
+		int room_ht = cam_height + y_buffer;
+		int midy = (y_coord * room_ht) - room_ht/2;
+		for(uint i = 0; i < doors.length; i++) {
+			if (!flipped) {
+				if (doors[i].e == 0) {
+					spr.draw_world(layer, 0, "door", 0, 0, doors[i].x - 36, doors[i].y - 96, 0, 1, 1, 0xFFFFFFFF);
+				} else {
+					spr.draw_world(layer, 0, "door", 0, 0, doors[i].x - 36, doors[i].y + 96, 0, 1, -1, 0xFFFFFFFF);
+				}
+			} else {
+				if (doors[i].e == 0) {
+					spr.draw_world(layer, 0, "door", 0, 0, doors[i].x - 36, 2*midy - doors[i].y + 96, 0, 1, -1, 0xFFFFFFFF);
+				} else {
+					spr.draw_world(layer, 0, "door", 0, 0, doors[i].x - 36, 2*midy - doors[i].y - 96, 0, 1, 1, 0xFFFFFFFF);
 				}
 			}
 		}
