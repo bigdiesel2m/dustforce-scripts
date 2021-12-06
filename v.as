@@ -44,8 +44,6 @@ class script {
 	int step_mid = 0;
 	int step_near = 0;
 	
-	int current_room = 2;
-	
 	script() {
 		@g = get_scene();
 		@c = create_canvas(true, 0, 0);
@@ -139,7 +137,7 @@ class script {
 		//CAMERA STUFF
 		gridcheck();
 		
-		current_room = int(floor(((max_grid_y - min_grid_y + 1)*(grid_x - min_grid_x) + (grid_y - min_grid_y))/2));
+		int current_room = int(floor(((max_grid_y - min_grid_y + 1)*(grid_x - min_grid_x) + (grid_y - min_grid_y))/2));
 		room_tiles[current_room].step(@cam, @fog);
 	}
 	
@@ -161,6 +159,7 @@ class script {
 		}
 		
 		//TILE PATTERN STUFF
+		int current_room = int(floor(((max_grid_y - min_grid_y + 1)*(grid_x - min_grid_x) + (grid_y - min_grid_y))/2));
 		room_tiles[current_room].draw(@g, @spr, flipped);
 		
 		//TEST STUFF
@@ -171,6 +170,16 @@ class script {
 	
 	void on_level_start() {
 		initialize();
+		
+		for(uint i = 0; i < particles_far.length; i++) {
+			particles_far[i].init(0);
+		}
+		for(uint i = 0; i < particles_mid.length; i++) {
+			particles_mid[i].init(1);
+		}
+		for(uint i = 0; i < particles_near.length; i++) {
+			particles_near[i].init(2);
+		}
 	}
 	
 	void checkpoint_load() {
@@ -192,16 +201,6 @@ class script {
 		cam.screen_height(cam_height);
 		gridcheck();
 		camera_update();
-		
-		for(uint i = 0; i < particles_far.length; i++) {
-			particles_far[i].init(0);
-		}
-		for(uint i = 0; i < particles_mid.length; i++) {
-			particles_mid[i].init(1);
-		}
-		for(uint i = 0; i < particles_near.length; i++) {
-			particles_near[i].init(2);
-		}
 	}
 	
 	void gridcheck() {
