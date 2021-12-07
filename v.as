@@ -211,6 +211,19 @@ class script {
 		if (old_grid_x != grid_x || old_grid_y != grid_y) {
 			camera_update();
 		}
+        
+        //SKYHAWK'S CODE TO FIX RESIZING ISSUES
+        float _, height;
+        cam.get_layer_draw_rect(0, 19, _, _, _, height);
+        if(not closeTo(height, cam_height, 0.001)) {
+            cam.script_camera(false);
+            cam.screen_height(cam_height);
+            camera_update();
+        }
+        else if(not cam.script_camera()){
+            cam.script_camera(true);
+            camera_update();
+        }
 	}
 	
 	void camera_update() {
@@ -291,14 +304,14 @@ class script {
 				}
 				//DOOR DETECTION AND STORAGE
 				int entint = g.get_entity_collision(gy * grid_height - (3*grid_height/2), gy * grid_height + (grid_height/2), gx * cam_width - cam_width/2, gx * cam_width + cam_width/2, 16);
-				for(uint j=0; j < entint; j++) {
+				for(int j=0; j < entint; j++) {
 					entity@ CurrentEntity = g.get_entity_collision_index(j);
 					if (CurrentEntity.type_name() == "level_door") {
 						if (CurrentEntity.y() > gy * grid_height - grid_height/2) {
-							Pos p = Pos(int(CurrentEntity.x()),int(CurrentEntity.y()), 0);
+							Pos p = Pos(int(6*round(CurrentEntity.x()/6)),int(6*round(CurrentEntity.y()/6)), 0);
 							room.doors.insertLast(p);
 						} else {
-							Pos p = Pos(int(CurrentEntity.x()),int(2*(gy * grid_height - grid_height/2) - CurrentEntity.y()), 1);
+							Pos p = Pos(int(6*round(CurrentEntity.x()/6)),int(6*round((2*(gy * grid_height - grid_height/2) - CurrentEntity.y())/6)), 1);
 							room.doors.insertLast(p);
 						}
 					}
@@ -432,15 +445,15 @@ class Room {
 		for(uint i = 0; i < doors.length; i++) {
 			if (!flipped) {
 				if (doors[i].e == 0) {
-					spr.draw_world(layer, 0, "door", 0, 0, doors[i].x - 36, doors[i].y - 96, 0, 1, 1, 0xFFFFFFFF);
+					spr.draw_world(layer, 0, "door", 0, 0, doors[i].x - 36, doors[i].y - 97, 0, 1, 1, 0xFFFFFFFF);
 				} else {
-					spr.draw_world(layer, 0, "door", 0, 0, doors[i].x - 36, doors[i].y + 96, 0, 1, -1, 0xFFFFFFFF);
+					spr.draw_world(layer, 0, "door", 0, 0, doors[i].x - 36, doors[i].y + 97, 0, 1, -1, 0xFFFFFFFF);
 				}
 			} else {
 				if (doors[i].e == 0) {
-					spr.draw_world(layer, 0, "door", 0, 0, doors[i].x - 36, 2*midy - doors[i].y + 96, 0, 1, -1, 0xFFFFFFFF);
+					spr.draw_world(layer, 0, "door", 0, 0, doors[i].x - 36, 2*midy - doors[i].y + 97, 0, 1, -1, 0xFFFFFFFF);
 				} else {
-					spr.draw_world(layer, 0, "door", 0, 0, doors[i].x - 36, 2*midy - doors[i].y - 96, 0, 1, 1, 0xFFFFFFFF);
+					spr.draw_world(layer, 0, "door", 0, 0, doors[i].x - 36, 2*midy - doors[i].y - 97, 0, 1, 1, 0xFFFFFFFF);
 				}
 			}
 		}
@@ -559,9 +572,9 @@ uint32 hsv_to_rgb(float hue, float sat, float val) {
 			bp = x;
 			break;
 	}
-	int r = int(floor((rp+m)*255 + 0.5));
-	int g = int(floor((gp+m)*255 + 0.5));
-	int b = int(floor((bp+m)*255 + 0.5));
+	int r = int(round((rp+m)*255));
+	int g = int(round((gp+m)*255));
+	int b = int(round((bp+m)*255));
 	uint32 rgb = 0xFF000000 + (r << 16) + (g << 8) + b;
 	return 0xFF000000 + (r << 16) + (g << 8) + b;
 }
