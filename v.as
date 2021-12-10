@@ -5,6 +5,17 @@ const string EMBED_tile4 = "vsprites/tile4.png";
 const string EMBED_tile5 = "vsprites/tile5.png";
 const string EMBED_door = "vsprites/door.png";
 
+const string EMBED_0 = "vfont/0.png";
+const string EMBED_1 = "vfont/1.png";
+const string EMBED_2 = "vfont/2.png";
+const string EMBED_3 = "vfont/3.png";
+const string EMBED_4 = "vfont/4.png";
+const string EMBED_5 = "vfont/5.png";
+const string EMBED_6 = "vfont/6.png";
+const string EMBED_7 = "vfont/7.png";
+const string EMBED_8 = "vfont/8.png";
+const string EMBED_9 = "vfont/9.png";
+
 const float cam_height = 1152;
 const float cam_width = 1536;
 const float y_buffer = 192;
@@ -65,6 +76,17 @@ class script {
 		msg.set_string("tile4", "tile4");
 		msg.set_string("tile5", "tile5");
 		msg.set_string("door", "door");
+
+		msg.set_string("0", "0");
+		msg.set_string("1", "1");
+		msg.set_string("2", "2");
+		msg.set_string("3", "3");
+		msg.set_string("4", "4");
+		msg.set_string("5", "5");
+		msg.set_string("6", "6");
+		msg.set_string("7", "7");
+		msg.set_string("8", "8");
+		msg.set_string("9", "9");
 	}
 	
 	
@@ -145,7 +167,7 @@ class script {
 		c.draw_rectangle(-805,455,-600,-455,0,0xFF000000);
 		c.draw_rectangle(805,455,600,-455,0,0xFF000000);
 		//THIS THIRD RECTANGLE JUST SO I CAN READ FPS
-		c.draw_rectangle(805,-350,350,-455,0,0xFF000000);
+		//c.draw_rectangle(805,-350,350,-455,0,0xFF000000);
 		
 		//PARTICLE STUFF
 		for(uint i = 0; i < particles_far.length; i++) {
@@ -160,7 +182,7 @@ class script {
 		
 		//TILE PATTERN STUFF
 		int current_room = int(floor(((max_grid_y - min_grid_y + 1)*(grid_x - min_grid_x) + (grid_y - min_grid_y))/2));
-		room_tiles[current_room].draw(@g, @spr, flipped);
+		room_tiles[current_room].draw(@g, @c, @spr, flipped);
 		
 		//TEST STUFF
 		//text_test.text(cam.x() + " - " + (cam.x() - (48 + cam_width / 2)) + " - " + particles_far[step_far].x);
@@ -329,9 +351,10 @@ class Room {
 	[text|tooltip:"Hue angle, from 0 to 359"] int hue = 30;
 	[option,1:1,2:2,3:3,4:4,5:5] int pattern = 3;
 	[option,1:1,2:2,3:3,4:4,5:5] int bg_pattern = 5;
+	[text] string name = "8675309";
 	[hidden] array<Pos> tiles;
 	[hidden] array<Pos> bg_tiles;
-	[text] array<Pos> doors;
+	[hidden] array<Pos> doors;
 	
 	uint32 tile_rgb = 0;
 	uint32 edge_rgb = 0;
@@ -380,10 +403,11 @@ class Room {
 		cam.change_fog(@fog, 0);
 	}
 	
-	void draw(scene@ g, sprites@ spr, bool flipped) {
+	void draw(scene@ g, canvas@ c, sprites@ spr, bool flipped) {
 		draw_tile_pattern(@g, @spr, tiles, pattern, get_tile_rgb(), get_edge_rgb(), 19, flipped);
 		draw_tile_pattern(@g, @spr, bg_tiles, bg_pattern, get_bg_tile_rgb(), get_bg_edge_rgb(), 15, flipped);
 		draw_door_sprites(@g, @spr, doors, 18, flipped);
+		draw_text_sprites(@c, @spr, name);
 	}
 	
 	void draw_tile_pattern(scene@ g, sprites@ spr, array<Pos> tiles, int pattern, uint32 c_pattern, uint32 c_edge, int layer, bool flipped) {
@@ -454,6 +478,20 @@ class Room {
 					spr.draw_world(layer, 0, "door", 0, 0, doors[i].x - 36, 2*midy - doors[i].y + 97, 0, 1, -1, 0xFFFFFFFF);
 				} else {
 					spr.draw_world(layer, 0, "door", 0, 0, doors[i].x - 36, 2*midy - doors[i].y - 97, 0, 1, 1, 0xFFFFFFFF);
+				}
+			}
+		}
+	}
+
+	void draw_text_sprites(canvas@ c, sprites@ spr, string name) {
+		if (name != "") {
+			c.draw_rectangle(-805,410,805,500,0,0xFF000000);
+			int start = -14 * name.length();
+			for(uint i = 0; i < name.length(); i++) {
+				if (name.substr(i,1) == " ") {
+					spr.draw_hud(20, 20, "space", 0, 0, start + i*28, 415, 0, 0.5, 0.5, 0xFFC4C4E3);
+				} else {
+					spr.draw_hud(20, 20, name.substr(i,1), 0, 0, start + i*28, 415, 0, 0.5, 0.5, 0xFFC4C4E3);
 				}
 			}
 		}
