@@ -5,6 +5,35 @@ const string EMBED_tile4 = "vsprites/tile4.png";
 const string EMBED_tile5 = "vsprites/tile5.png";
 const string EMBED_door = "vsprites/door.png";
 
+const string EMBED_excla = "vfont/!.png";
+const string EMBED_pound = "vfont/#.png";
+const string EMBED_money = "vfont/$.png";
+const string EMBED_percent = "vfont/%.png";
+const string EMBED_amp = "vfont/&.png";
+const string EMBED_opar = "vfont/(.png";
+const string EMBED_cpar = "vfont/).png";
+const string EMBED_comma = "vfont/,.png";
+const string EMBED_apos = "vfont/'.png";
+const string EMBED_dash = "vfont/-.png";
+const string EMBED_semi = "vfont/;.png";
+const string EMBED_at = "vfont/@.png";
+const string EMBED_obrace = "vfont/[.png";
+const string EMBED_cbrace = "vfont/].png";
+const string EMBED_under = "vfont/_.png";
+const string EMBED_grave = "vfont/`.png";
+const string EMBED_plus = "vfont/+.png";
+const string EMBED_equals = "vfont/=.png";
+const string EMBED_ast = "vfont/ast.png";
+const string EMBED_chevl = "vfont/chevl.png";
+const string EMBED_chevr = "vfont/chevr.png";
+const string EMBED_colon = "vfont/colon.png";
+const string EMBED_period = "vfont/period.png";
+const string EMBED_quest = "vfont/quest.png";
+const string EMBED_slash = "vfont/slash.png";
+const string EMBED_space = "vfont/space.png";
+
+const string EMBED_bslash = "vfont/bslash.png";
+
 const string EMBED_0 = "vfont/0.png";
 const string EMBED_1 = "vfont/1.png";
 const string EMBED_2 = "vfont/2.png";
@@ -15,6 +44,60 @@ const string EMBED_6 = "vfont/6.png";
 const string EMBED_7 = "vfont/7.png";
 const string EMBED_8 = "vfont/8.png";
 const string EMBED_9 = "vfont/9.png";
+
+const string EMBED_A = "vfont/A.png";
+const string EMBED_B = "vfont/B.png";
+const string EMBED_C = "vfont/C.png";
+const string EMBED_D = "vfont/D.png";
+const string EMBED_E = "vfont/E.png";
+const string EMBED_F = "vfont/F.png";
+const string EMBED_G = "vfont/G.png";
+const string EMBED_H = "vfont/H.png";
+const string EMBED_I = "vfont/I.png";
+const string EMBED_J = "vfont/J.png";
+const string EMBED_K = "vfont/K.png";
+const string EMBED_L = "vfont/L.png";
+const string EMBED_M = "vfont/M.png";
+const string EMBED_N = "vfont/N.png";
+const string EMBED_O = "vfont/O.png";
+const string EMBED_P = "vfont/P.png";
+const string EMBED_Q = "vfont/Q.png";
+const string EMBED_R = "vfont/R.png";
+const string EMBED_S = "vfont/S.png";
+const string EMBED_T = "vfont/T.png";
+const string EMBED_U = "vfont/U.png";
+const string EMBED_V = "vfont/V.png";
+const string EMBED_W = "vfont/W.png";
+const string EMBED_X = "vfont/X.png";
+const string EMBED_Y = "vfont/Y.png";
+const string EMBED_Z = "vfont/Z.png";
+
+const string EMBED_a2 = "vfont/a2.png";
+const string EMBED_b2 = "vfont/b2.png";
+const string EMBED_c2 = "vfont/c2.png";
+const string EMBED_d2 = "vfont/d2.png";
+const string EMBED_e2 = "vfont/e2.png";
+const string EMBED_f2 = "vfont/f2.png";
+const string EMBED_g2 = "vfont/g2.png";
+const string EMBED_h2 = "vfont/h2.png";
+const string EMBED_i2 = "vfont/i2.png";
+const string EMBED_j2 = "vfont/j2.png";
+const string EMBED_k2 = "vfont/k2.png";
+const string EMBED_l2 = "vfont/l2.png";
+const string EMBED_m2 = "vfont/m2.png";
+const string EMBED_n2 = "vfont/n2.png";
+const string EMBED_o2 = "vfont/o2.png";
+const string EMBED_p2 = "vfont/p2.png";
+const string EMBED_q2 = "vfont/q2.png";
+const string EMBED_r2 = "vfont/r2.png";
+const string EMBED_s2 = "vfont/s2.png";
+const string EMBED_t2 = "vfont/t2.png";
+const string EMBED_u2 = "vfont/u2.png";
+const string EMBED_v2 = "vfont/v2.png";
+const string EMBED_w2 = "vfont/w2.png";
+const string EMBED_x2 = "vfont/x2.png";
+const string EMBED_y2 = "vfont/y2.png";
+const string EMBED_z2 = "vfont/z2.png";
 
 const float cam_height = 1152;
 const float cam_width = 1536;
@@ -77,6 +160,35 @@ class script {
 		msg.set_string("tile5", "tile5");
 		msg.set_string("door", "door");
 
+		msg.set_string("!", "excla");
+		msg.set_string("#", "pound");
+		msg.set_string("$", "money");
+		msg.set_string("%", "percent");
+		msg.set_string("&", "amp");
+		msg.set_string("(", "opar");
+		msg.set_string(")", "cpar");
+		msg.set_string(",", "comma");
+		msg.set_string("'", "apos");
+		msg.set_string("-", "dash");
+		msg.set_string(";", "semi");
+		msg.set_string("@", "at");
+		msg.set_string("[", "obrace");
+		msg.set_string("]", "cbrace");
+		msg.set_string("_", "under");
+		msg.set_string("`", "grave");
+		msg.set_string("+", "plus");
+		msg.set_string("=", "equals");
+		msg.set_string("*", "ast");
+		msg.set_string("<", "chevl");
+		msg.set_string(">", "chevr");
+		msg.set_string(":", "colon");
+		msg.set_string(".", "period");
+		msg.set_string("?", "quest");
+		msg.set_string("/", "slash");
+		msg.set_string(" ", "space");
+		
+		msg.set_string("\\", "bslash");
+
 		msg.set_string("0", "0");
 		msg.set_string("1", "1");
 		msg.set_string("2", "2");
@@ -87,6 +199,60 @@ class script {
 		msg.set_string("7", "7");
 		msg.set_string("8", "8");
 		msg.set_string("9", "9");
+
+		msg.set_string("A", "A");
+		msg.set_string("B", "B");
+		msg.set_string("C", "C");
+		msg.set_string("D", "D");
+		msg.set_string("E", "E");
+		msg.set_string("F", "F");
+		msg.set_string("G", "G");
+		msg.set_string("H", "H");
+		msg.set_string("I", "I");
+		msg.set_string("J", "J");
+		msg.set_string("K", "K");
+		msg.set_string("L", "L");
+		msg.set_string("M", "M");
+		msg.set_string("N", "N");
+		msg.set_string("O", "O");
+		msg.set_string("P", "P");
+		msg.set_string("Q", "Q");
+		msg.set_string("R", "R");
+		msg.set_string("S", "S");
+		msg.set_string("T", "T");
+		msg.set_string("U", "U");
+		msg.set_string("V", "V");
+		msg.set_string("W", "W");
+		msg.set_string("X", "X");
+		msg.set_string("Y", "Y");
+		msg.set_string("Z", "Z");
+
+		msg.set_string("a", "a2");
+		msg.set_string("b", "b2");
+		msg.set_string("c", "c2");
+		msg.set_string("d", "d2");
+		msg.set_string("e", "e2");
+		msg.set_string("f", "f2");
+		msg.set_string("g", "g2");
+		msg.set_string("h", "h2");
+		msg.set_string("i", "i2");
+		msg.set_string("j", "j2");
+		msg.set_string("k", "k2");
+		msg.set_string("l", "l2");
+		msg.set_string("m", "m2");
+		msg.set_string("n", "n2");
+		msg.set_string("o", "o2");
+		msg.set_string("p", "p2");
+		msg.set_string("q", "q2");
+		msg.set_string("r", "r2");
+		msg.set_string("s", "s2");
+		msg.set_string("t", "t2");
+		msg.set_string("u", "u2");
+		msg.set_string("v", "v2");
+		msg.set_string("w", "w2");
+		msg.set_string("x", "x2");
+		msg.set_string("y", "y2");
+		msg.set_string("z", "z2");
 	}
 	
 	
@@ -167,7 +333,7 @@ class script {
 		c.draw_rectangle(-805,455,-600,-455,0,0xFF000000);
 		c.draw_rectangle(805,455,600,-455,0,0xFF000000);
 		//THIS THIRD RECTANGLE JUST SO I CAN READ FPS
-		//c.draw_rectangle(805,-350,350,-455,0,0xFF000000);
+		c.draw_rectangle(805,-350,350,-455,0,0xFF000000);
 		
 		//PARTICLE STUFF
 		for(uint i = 0; i < particles_far.length; i++) {
@@ -351,7 +517,7 @@ class Room {
 	[text|tooltip:"Hue angle, from 0 to 359"] int hue = 30;
 	[option,1:1,2:2,3:3,4:4,5:5] int pattern = 3;
 	[option,1:1,2:2,3:3,4:4,5:5] int bg_pattern = 5;
-	[text] string name = "8675309";
+	[text] string name = "";
 	[hidden] array<Pos> tiles;
 	[hidden] array<Pos> bg_tiles;
 	[hidden] array<Pos> doors;
@@ -486,13 +652,9 @@ class Room {
 	void draw_text_sprites(canvas@ c, sprites@ spr, string name) {
 		if (name != "") {
 			c.draw_rectangle(-805,410,805,500,0,0xFF000000);
-			int start = -14 * name.length();
+			int start = -16 * name.length();
 			for(uint i = 0; i < name.length(); i++) {
-				if (name.substr(i,1) == " ") {
-					spr.draw_hud(20, 20, "space", 0, 0, start + i*28, 415, 0, 0.5, 0.5, 0xFFC4C4E3);
-				} else {
-					spr.draw_hud(20, 20, name.substr(i,1), 0, 0, start + i*28, 415, 0, 0.5, 0.5, 0xFFC4C4E3);
-				}
+				spr.draw_hud(20, 20, name.substr(i,1), 0, 0, start + i*32, 415, 0, 0.5, 0.5, 0xFFC4C4E3);
 			}
 		}
 	}
