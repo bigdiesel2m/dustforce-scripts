@@ -6,6 +6,33 @@ const string EMBED_tile5 = "vsprites/tile5.png";
 const string EMBED_door = "vsprites/door.png";
 const string EMBED_cp = "vsprites/cp.png";
 
+const string EMBED_amogus0 = "vsprites/amogus0.png";
+const string EMBED_amogus1 = "vsprites/amogus1.png";
+const string EMBED_coin0 = "vsprites/coin0.png";
+const string EMBED_coin1 = "vsprites/coin1.png";
+const string EMBED_coin2 = "vsprites/coin2.png";
+const string EMBED_coin3 = "vsprites/coin3.png";
+const string EMBED_heart0 = "vsprites/heart0.png";
+const string EMBED_heart1 = "vsprites/heart1.png";
+const string EMBED_impasta0 = "vsprites/impasta0.png";
+const string EMBED_impasta1 = "vsprites/impasta1.png";
+const string EMBED_lies = "vsprites/lies.png";
+const string EMBED_obey = "vsprites/obey.png";
+const string EMBED_soldier0 = "vsprites/soldier0.png";
+const string EMBED_soldier1 = "vsprites/soldier1.png";
+const string EMBED_speaker0 = "vsprites/speaker0.png";
+const string EMBED_speaker1 = "vsprites/speaker1.png";
+const string EMBED_stop0 = "vsprites/stop0.png";
+const string EMBED_stop1 = "vsprites/stop1.png";
+const string EMBED_stop2 = "vsprites/stop2.png";
+const string EMBED_stop3 = "vsprites/stop3.png";
+const string EMBED_truth = "vsprites/truth.png";
+const string EMBED_tv = "vsprites/tv.png";
+const string EMBED_yes0 = "vsprites/yes0.png";
+const string EMBED_yes1 = "vsprites/yes1.png";
+const string EMBED_yes2 = "vsprites/yes2.png";
+const string EMBED_yes3 = "vsprites/yes3.png";
+
 const string EMBED_excla = "vfont/!.png";
 const string EMBED_pound = "vfont/#.png";
 const string EMBED_money = "vfont/$.png";
@@ -139,6 +166,9 @@ class script {
 	int step_mid = 0;
 	int step_near = 0;
 	
+	// Unrealistic number, change previous_room to signed and this to -1 if this becomes realistic somehow
+	uint previous_room = 99999;
+	
 	script() {
 		@g = get_scene();
 		@c = create_canvas(true, 0, 0);
@@ -161,6 +191,34 @@ class script {
 		msg.set_string("tile5", "tile5");
 		msg.set_string("door", "door");
 		msg.set_string("cp", "cp");
+		
+		msg.set_string("amogus0", "amogus0");
+		msg.set_string("amogus1", "amogus1");
+		msg.set_string("coin0", "coin0");
+		msg.set_string("coin1", "coin1");
+		msg.set_string("coin2", "coin2");
+		msg.set_string("coin3", "coin3");
+		msg.set_string("heart0", "heart0");
+		msg.set_string("heart1", "heart1");
+		msg.set_string("impasta0", "impasta0");
+		msg.set_string("impasta1", "impasta1");
+		msg.set_string("lies", "lies");
+		msg.set_string("obey", "obey");
+		msg.set_string("soldier0", "soldier0");
+		msg.set_string("soldier1", "soldier1");
+		msg.set_string("soldier1|offsetx", "2");
+		msg.set_string("speaker0", "speaker0");
+		msg.set_string("speaker1", "speaker1");
+		msg.set_string("stop0", "stop0");
+		msg.set_string("stop1", "stop1");
+		msg.set_string("stop2", "stop2");
+		msg.set_string("stop3", "stop3");
+		msg.set_string("truth", "truth");
+		msg.set_string("tv", "tv");
+		msg.set_string("yes0", "yes0");
+		msg.set_string("yes1", "yes1");
+		msg.set_string("yes2", "yes2");
+		msg.set_string("yes3", "yes3");
 
 		msg.set_string("!", "excla");
 		msg.set_string("#", "pound");
@@ -328,7 +386,11 @@ class script {
 		gridcheck();
 		
 		int current_room = int(floor(((max_grid_y - min_grid_y + 1)*(grid_x - min_grid_x) + (grid_y - min_grid_y))/2));
-		room_tiles[current_room].step(@cam, @fog);
+		if (current_room != previous_room)
+			room_tiles[current_room].enter();
+		previous_room = current_room;
+		room_tiles[current_room].step(@cam, @fog, spr, flipped);
+		
 	}
 	
 	void draw(float subframe) {
@@ -516,7 +578,7 @@ class script {
 					}
 				}
 
-				//DOOR DETECTION AND STORAGE
+				//DOOR AND ENEMY DETECTION AND STORAGE
 				int doorint = g.get_entity_collision(gy * grid_height - (3*grid_height/2), gy * grid_height + (grid_height/2), gx * cam_width - cam_width/2, gx * cam_width + cam_width/2, 16);
 				for(int j=0; j < doorint; j++) {
 					entity@ CurrentEntity = g.get_entity_collision_index(j);
@@ -529,6 +591,27 @@ class script {
 							Pos p = Pos(int(6*round(CurrentEntity.x()/6)),int(6*round((2*(gy * grid_height - grid_height/2) - CurrentEntity.y())/6)), 1);
 							room.triggers.insertLast(p);
 						}
+					} else if (CurrentEntity.type_name() == "z_script_trigger") {
+						scripttrigger@ s = CurrentEntity.as_scripttrigger();
+						if (@s == null)
+							continue;
+						EnemyPlacer@ ep = cast<EnemyPlacer>(s.get_object());
+						if(@ep == null)
+							continue;
+						Enemy@ e = Enemy();
+						e.start_x = CurrentEntity.x();
+						e.start_y = CurrentEntity.y();
+						e.end_x = ep.end_x;
+						e.end_y = ep.end_y;
+						e.duration = ep.move_duration;
+						e.repeat = ep.repeat;
+						e.reverse = ep.reverse_at_end;
+						e.sprite = ep.sprite;
+						e.frames = ep.sprite_frames;
+						e.speed = ep.animation_speed;
+						e.colour = ep.colour | 0xFF000000;
+						
+						room.enemies.insertLast(e);
 					}
 				}
 
@@ -563,6 +646,7 @@ class Room {
 	[hidden] array<Pos> tiles;
 	[hidden] array<Pos> bg_tiles;
 	[text] array<Pos> triggers;
+	[hidden] array<Enemy> enemies;
 	
 	uint32 tile_rgb = 0;
 	uint32 edge_rgb = 0;
@@ -605,10 +689,22 @@ class Room {
 		return bg_edge_rgb;
 	}
 	
-	void step(camera@ cam, fog_setting@ fog) {
+	void step(camera@ cam, fog_setting@ fog, sprites@ spr, bool flipped) {
 		fog.colour(19, 10, body_rgb);
 		fog.percent(19, 10, 1);
 		cam.change_fog(@fog, 0);
+		controllable@ c = controller_controllable(0);
+		if (c != null) {
+			for (uint i = 0; i < enemies.length(); i++) {
+				enemies[i].step(spr, c, y_coord, flipped);
+			}
+		}
+	}
+	
+	void enter() {
+		for (uint i = 0; i < enemies.length(); i++) {
+			enemies[i].reset();
+		}
 	}
 	
 	void draw(scene@ g, canvas@ c, sprites@ spr, bool flipped) {
@@ -616,6 +712,7 @@ class Room {
 		draw_tile_pattern(@g, @spr, bg_tiles, bg_pattern, get_bg_tile_rgb(), get_bg_edge_rgb(), 15, flipped);
 		draw_trigger_sprites(@g, @spr, triggers, 18, flipped);
 		draw_text_sprites(@c, @spr, name);
+		draw_enemies(@g, @spr, flipped);
 	}
 	
 	void draw_tile_pattern(scene@ g, sprites@ spr, array<Pos> tiles, int pattern, uint32 c_pattern, uint32 c_edge, int layer, bool flipped) {
@@ -708,6 +805,12 @@ class Room {
 			}
 		}
 	}
+	
+	void draw_enemies(scene@ g, sprites@ spr, bool flipped) {
+		for (uint i = 0; i < enemies.length(); i++) {
+			enemies[i].draw(g, spr, y_coord, flipped);
+		}
+	}
 
 	//THIS PUTS THE ROOM NAME AT THE BOTTOM OF THE SCREEN
 	void draw_text_sprites(canvas@ c, sprites@ spr, string name) {
@@ -794,6 +897,176 @@ class Particle {
 	void restart() {
 		x = cam_width / 2 + 96;
 		y = (rand() % cam_height) - cam_height/2;
+	}
+}
+
+string indexed_name(string name, float index, uint length) {
+	if (length != 0)
+		return name + formatInt(floor(index));
+	else
+		return name;
+}
+
+class Enemy {
+	[hidden] float start_x;
+	[hidden] float start_y;
+	[hidden] float end_x;
+	[hidden] float end_y;
+	[hidden] uint duration;
+	[hidden] bool repeat;
+	[hidden] bool reverse;
+	[hidden] string sprite;
+	[hidden] uint frames;
+	[hidden] float speed;
+	[hidden] uint colour;
+	
+	// 0: move forwards
+	// 1: move backwards
+	// 2: dont draw (offscreen or similar)
+	uint current_state;
+	float current_progress;
+	float current_frame;
+	
+	void reset() {
+		current_state = 0;
+		current_progress = 0;
+		current_frame = 0;
+	}
+	
+	void step(sprites@ spr, controllable@ c, int y_coord, bool flipped) {
+		if (current_state == 2)
+			return;
+		if (collide_with(spr, c, y_coord, flipped)) {
+			c.as_dustman().kill(true);
+		}
+		current_frame += speed/60;
+		if (current_frame > frames) {
+			current_frame -= frames;
+		}
+		if (current_state == 0) {
+			if (duration > 0) {
+				current_progress += 1.0/duration;
+			}
+			if (current_progress > 1) {
+				if (repeat) {
+					if (reverse) {
+						current_state = 1;
+					} else {
+						current_progress = 0;
+					}
+				} else {
+					current_state = 2;
+				}
+			}
+		} else if (current_state == 1) {
+			if (duration > 0) {
+				current_progress -= 1.0/duration;
+			}
+			if (current_progress < 0) {
+				current_state = 0;
+			}
+		}
+	}
+	
+	bool collide_with(sprites@ spr, controllable@ c, int y_coord, bool flipped) {
+		int room_ht = cam_height + y_buffer;
+		int midy = (y_coord * room_ht) - room_ht/2;
+		float curr_x = start_x * (1.0 - current_progress) + end_x * current_progress;
+		float curr_y;
+		if (!flipped) {
+			curr_y = start_y * (1.0 - current_progress) + end_y * current_progress;
+		} else {
+			curr_y = (2 * midy - start_y) * (1.0 - current_progress) + (2 * midy - end_y) * current_progress;
+		}
+		rectangle @coll = spr.get_sprite_rect(indexed_name(sprite, current_frame, frames), 0);
+		rectangle @ccoll = c.hit_rectangle();
+
+		if (flipped) {
+			return !(c.x() + ccoll.right() < coll.left() + curr_x ||
+					 c.x() + ccoll.left() > coll.right() + curr_x ||
+					 c.y() + ccoll.bottom() < -coll.bottom() + curr_y ||
+					 c.y() + ccoll.top() > -coll.top() + curr_y);
+		} else {
+			return !(c.x() + ccoll.right() < coll.left() + curr_x ||
+					 c.x() + ccoll.left() > coll.right() + curr_x ||
+					 c.y() + ccoll.bottom() < coll.top() + curr_y ||
+					 c.y() + ccoll.top() > coll.bottom() + curr_y);
+		}
+		
+	}
+
+	void draw(scene@ g, sprites@ spr, int y_coord, bool flipped) {
+		int room_ht = cam_height + y_buffer;
+		int midy = (y_coord * room_ht) - room_ht/2;
+		float x1 = start_x;
+		float x2 = end_x;
+		float y1, y2;
+		if (!flipped) {
+			y1 = start_y;
+			y2 = end_y;
+		} else {
+			y1 = 2 * midy - start_y;
+			y2 = 2 * midy - end_y;
+		}
+		float y_scale = flipped ? -1 : 1;
+		spr.draw_world(18, 8, indexed_name(sprite, current_frame, frames), 0, 0,
+					   x1 * (1.0 - current_progress) + x2 * current_progress,
+					   y1 * (1.0 - current_progress) + y2 * current_progress,
+					   0, 1, y_scale, colour);
+		rectangle@ r = spr.get_sprite_rect(indexed_name(sprite, current_frame, frames), 0);			   
+	}
+}
+
+class EnemyPlacer : trigger_base {
+	[position,mode:world,layer:19,y:"end_y"] float end_x;
+	[hidden] float end_y;
+	
+	[boolean] bool repeat;
+	[boolean] bool reverse_at_end;
+	// Measured in steps
+	[text] uint move_duration;
+	
+	[boolean] bool align_x = false;
+	[boolean] bool align_y = false;
+	
+	[text] string sprite = "";
+	[text] uint sprite_frames = 0;
+	// Measured in frames/second
+	[text] float animation_speed = 1;
+	float current_frame = 0;
+	[colour] uint colour = 0xffffff;
+	
+	script@ s;
+	sprites@ spr;
+	scripttrigger@ self;
+	
+	void init(script@ s, scripttrigger@ self) {
+		@spr = create_sprites();
+		spr.add_sprite_set("script");
+		@this.s = s;
+		@this.self = @self;
+		current_frame = 0;
+	}
+	
+	void editor_step() {
+		if (align_x) {
+			end_x = self.x();
+			align_x = false;
+		} else if (align_y) {
+			end_y = self.y();
+			align_y = false;
+		}
+		editor_sync_vars_menu();
+		current_frame += animation_speed/60;
+		if (current_frame > sprite_frames) {
+			current_frame -= sprite_frames;
+		}
+	}
+	
+	void editor_draw(float f) {
+		s.g.draw_line_world(20, 0, self.x(), self.y(), end_x, end_y, 2, 0xA0FFFFFF);
+		spr.draw_world(20, 0, indexed_name(sprite, current_frame, sprite_frames), 0, 0, self.x(), self.y(), 0, 1, 1, colour | 0xFF000000);
+		spr.draw_world(20, 0, indexed_name(sprite, current_frame, sprite_frames), 0, 0, end_x, end_y, 0, 1, 1, colour | 0x90000000);
 	}
 }
 
