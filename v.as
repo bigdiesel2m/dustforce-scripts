@@ -4,6 +4,7 @@ const string EMBED_tile3 = "vsprites/tile3.png";
 const string EMBED_tile4 = "vsprites/tile4.png";
 const string EMBED_tile5 = "vsprites/tile5.png";
 const string EMBED_door = "vsprites/door.png";
+const string EMBED_cp = "vsprites/cp.png";
 
 const string EMBED_excla = "vfont/!.png";
 const string EMBED_pound = "vfont/#.png";
@@ -159,6 +160,7 @@ class script {
 		msg.set_string("tile4", "tile4");
 		msg.set_string("tile5", "tile5");
 		msg.set_string("door", "door");
+		msg.set_string("cp", "cp");
 
 		msg.set_string("!", "excla");
 		msg.set_string("#", "pound");
@@ -490,17 +492,34 @@ class script {
 						}
 					}
 				}
+
 				//DOOR DETECTION AND STORAGE
-				int entint = g.get_entity_collision(gy * grid_height - (3*grid_height/2), gy * grid_height + (grid_height/2), gx * cam_width - cam_width/2, gx * cam_width + cam_width/2, 16);
-				for(int j=0; j < entint; j++) {
+				int doorint = g.get_entity_collision(gy * grid_height - (3*grid_height/2), gy * grid_height + (grid_height/2), gx * cam_width - cam_width/2, gx * cam_width + cam_width/2, 16);
+				for(int j=0; j < doorint; j++) {
 					entity@ CurrentEntity = g.get_entity_collision_index(j);
+					//puts(CurrentEntity.type_name());
 					if (CurrentEntity.type_name() == "level_door") {
 						if (CurrentEntity.y() > gy * grid_height - grid_height/2) {
 							Pos p = Pos(int(6*round(CurrentEntity.x()/6)),int(6*round(CurrentEntity.y()/6)), 0);
-							room.doors.insertLast(p);
+							room.triggers.insertLast(p);
 						} else {
 							Pos p = Pos(int(6*round(CurrentEntity.x()/6)),int(6*round((2*(gy * grid_height - grid_height/2) - CurrentEntity.y())/6)), 1);
-							room.doors.insertLast(p);
+							room.triggers.insertLast(p);
+						}
+					}
+				}
+
+				//CHECKPOINT DETECTION AND STORAGE
+				int cpint = g.get_entity_collision(gy * grid_height - (3*grid_height/2), gy * grid_height + (grid_height/2), gx * cam_width - cam_width/2, gx * cam_width + cam_width/2, 20);
+				for(int j=0; j < cpint; j++) {
+					entity@ CurrentEntity = g.get_entity_collision_index(j);
+					if (CurrentEntity.type_name() == "check_point") {
+						if (CurrentEntity.y() > gy * grid_height - grid_height/2) {
+							Pos p = Pos(int(6*round(CurrentEntity.x()/6)),int(6*round(CurrentEntity.y()/6)), 2);
+							room.triggers.insertLast(p);
+						} else {
+							Pos p = Pos(int(6*round(CurrentEntity.x()/6)),int(6*round((2*(gy * grid_height - grid_height/2) - CurrentEntity.y())/6)), 3);
+							room.triggers.insertLast(p);
 						}
 					}
 				}
@@ -520,7 +539,7 @@ class Room {
 	[text] string name = "";
 	[hidden] array<Pos> tiles;
 	[hidden] array<Pos> bg_tiles;
-	[hidden] array<Pos> doors;
+	[text] array<Pos> triggers;
 	
 	uint32 tile_rgb = 0;
 	uint32 edge_rgb = 0;
@@ -572,7 +591,7 @@ class Room {
 	void draw(scene@ g, canvas@ c, sprites@ spr, bool flipped) {
 		draw_tile_pattern(@g, @spr, tiles, pattern, get_tile_rgb(), get_edge_rgb(), 19, flipped);
 		draw_tile_pattern(@g, @spr, bg_tiles, bg_pattern, get_bg_tile_rgb(), get_bg_edge_rgb(), 15, flipped);
-		draw_door_sprites(@g, @spr, doors, 18, flipped);
+		draw_trigger_sprites(@g, @spr, triggers, 18, flipped);
 		draw_text_sprites(@c, @spr, name);
 	}
 	
@@ -629,26 +648,45 @@ class Room {
 		}
 	}
 
-	void draw_door_sprites(scene@ g, sprites@ spr, array<Pos> doors, int layer, bool flipped) {
+	void draw_trigger_sprites(scene@ g, sprites@ spr, array<Pos> triggers, int layer, bool flipped) {
 		int room_ht = cam_height + y_buffer;
 		int midy = (y_coord * room_ht) - room_ht/2;
-		for(uint i = 0; i < doors.length; i++) {
+		for(uint i = 0; i < triggers.length; i++) {
 			if (!flipped) {
-				if (doors[i].e == 0) {
-					spr.draw_world(layer, 0, "door", 0, 0, doors[i].x - 36, doors[i].y - 97, 0, 1, 1, 0xFFFFFFFF);
-				} else {
-					spr.draw_world(layer, 0, "door", 0, 0, doors[i].x - 36, doors[i].y + 97, 0, 1, -1, 0xFFFFFFFF);
+				switch(triggers[i].e) {
+					case 0:
+						spr.draw_world(layer, 0, "door", 0, 0, triggers[i].x - 36, triggers[i].y - 97, 0, 1, 1, 0xFFFFFFFF);
+						break;
+					case 1:
+						spr.draw_world(layer, 0, "door", 0, 0, triggers[i].x - 36, triggers[i].y + 97, 0, 1, -1, 0xFFFFFFFF);
+						break;
+					case 2:
+						spr.draw_world(layer, 0, "cp", 0, 0, triggers[i].x - 36, triggers[i].y - 97, 0, 1, 1, 0xFFFFFFFF);
+						break;
+					case 3:
+						spr.draw_world(layer, 0, "cp", 0, 0, triggers[i].x - 36, triggers[i].y + 97, 0, 1, -1, 0xFFFFFFFF);
+						break;
 				}
 			} else {
-				if (doors[i].e == 0) {
-					spr.draw_world(layer, 0, "door", 0, 0, doors[i].x - 36, 2*midy - doors[i].y + 97, 0, 1, -1, 0xFFFFFFFF);
-				} else {
-					spr.draw_world(layer, 0, "door", 0, 0, doors[i].x - 36, 2*midy - doors[i].y - 97, 0, 1, 1, 0xFFFFFFFF);
+				switch(triggers[i].e) {
+					case 0:
+						spr.draw_world(layer, 0, "door", 0, 0, triggers[i].x - 36, 2*midy - triggers[i].y + 97, 0, 1, -1, 0xFFFFFFFF);
+						break;
+					case 1:
+						spr.draw_world(layer, 0, "door", 0, 0, triggers[i].x - 36, 2*midy - triggers[i].y - 97, 0, 1, 1, 0xFFFFFFFF);
+						break;
+					case 2:
+						spr.draw_world(layer, 0, "cp", 0, 0, triggers[i].x - 36, 2*midy - triggers[i].y + 97, 0, 1, -1, 0xFFFFFFFF);
+						break;
+					case 3:
+						spr.draw_world(layer, 0, "cp", 0, 0, triggers[i].x - 36, 2*midy - triggers[i].y - 97, 0, 1, 1, 0xFFFFFFFF);
+						break;
 				}
 			}
 		}
 	}
 
+	//THIS PUTS THE ROOM NAME AT THE BOTTOM OF THE SCREEN
 	void draw_text_sprites(canvas@ c, sprites@ spr, string name) {
 		if (name != "") {
 			c.draw_rectangle(-805,410,805,500,0,0xFF000000);
