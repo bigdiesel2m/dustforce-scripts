@@ -490,6 +490,29 @@ class script {
 							Pos p = Pos(tile_x, tile_y, tile_edges);
 							room.bg_tiles.insertLast(p);
 						}
+                        
+                        // building mirrored room
+                        // doesnt properly mirror shapes
+						tile_y = gy * room_height - (room_height/2) - ty - 1;
+                        uint8 edge_temp;
+                        if(t.solid()) {
+                            edge_temp = t.edge_top();
+                            t.edge_top(t.edge_bottom());
+                            t.edge_bottom(edge_temp);
+                            g.set_tile(tile_x, tile_y, 19, @t, false);
+						} else {
+                            t.solid(false);
+                            g.set_tile(tile_x, tile_y, 19, @t, false);
+                        }
+						if(tb.solid()) {
+                            edge_temp = tb.edge_top();
+                            tb.edge_top(t.edge_bottom());
+                            tb.edge_bottom(edge_temp);
+                            g.set_tile(tile_x, tile_y, 15, @tb, false);
+						} else {
+                            tb.solid(false);
+                            g.set_tile(tile_x, tile_y, 15, @tb, false);
+                        }
 					}
 				}
 
