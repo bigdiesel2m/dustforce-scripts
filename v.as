@@ -33,6 +33,11 @@ const string EMBED_yes1 = "vsprites/yes1.png";
 const string EMBED_yes2 = "vsprites/yes2.png";
 const string EMBED_yes3 = "vsprites/yes3.png";
 
+const string EMBED_spike = "vsprites/spike.png";
+const string EMBED_fspike = "vsprites/fillspike.png";
+const string EMBED_flipspike = "vsprites/flipspike.png";
+const string EMBED_flipfspike = "vsprites/flipfillspike.png";
+
 const string EMBED_excla = "vfont/!.png";
 const string EMBED_pound = "vfont/#.png";
 const string EMBED_money = "vfont/$.png";
@@ -156,6 +161,8 @@ class script {
 	//TILE STUFF
 	[text] array<Room> room_tiles;
 	[boolean] bool detect_tiles = false;
+	int current_checkpoint_room = -1;
+	uint current_checkpoint;
 	sprites@ spr;
 	
 	//PARTICLE STUFF
@@ -219,6 +226,11 @@ class script {
 		msg.set_string("yes1", "yes1");
 		msg.set_string("yes2", "yes2");
 		msg.set_string("yes3", "yes3");
+
+		msg.set_string("spike", "spike");
+		msg.set_string("fspike", "fspike");
+		msg.set_string("flipspike", "flipspike");
+		msg.set_string("flipfspike", "flipfspike");
 
 		msg.set_string("!", "excla");
 		msg.set_string("#", "pound");
@@ -315,6 +327,27 @@ class script {
 		msg.set_string("z", "z2");
 	}
 	
+	void checkpoint_save() {
+		int current_room = int(floor(((max_grid_y - min_grid_y + 1)*(grid_x - min_grid_x) + (grid_y - min_grid_y))/2));
+		current_checkpoint_room = current_room;
+		current_checkpoint = -1;
+		float previous_distance = -1;
+		Room@ curr = @room_tiles[current_room];
+		for(uint i = 0; i < curr.triggers.length; i++) {
+			// Pick the closes trigger of the right kind
+			if (curr.triggers[i].e > 1) {
+				float distance = sqrt(pow(dm.x() - curr.triggers[i].x, 2) + pow(dm.y() - curr.triggers[i].y, 2));
+				if (previous_distance == -1 || distance < previous_distance) {
+					previous_distance = distance;
+					current_checkpoint = i;
+				}
+			}
+		}
+		if (current_checkpoint == -1) {
+			puts("Failed to find gotten checkpoint trigger");
+			current_checkpoint_room = -1;
+		}
+	}
 	
 	void step(int entities) {
 		//Y TELEPORTING
@@ -381,6 +414,28 @@ class script {
 			dm.y_intent(-dm.y_intent());
 		}
 		*/
+		if (dm.y_intent() == -1) {
+			dm.y_intent(0);
+		}
+		
+		// Messed up air physics
+		if (!dm.ground()) {
+			dm.di_speed(2000 * 3);
+			dm.di_move_max(400 * 3);
+			dm.run_start(300 * 3);
+			dm.land_fric(1720 * 3);
+			dm.skid_fric(1152 * 20);
+			dm.idle_fric(1728 * 3);
+			dm.dash(0);
+		} else {
+			dm.di_speed(2000);
+			dm.di_move_max(400);
+			dm.run_start(300);
+			dm.land_fric(1720);
+			dm.skid_fric(1152);
+			dm.idle_fric(1728);
+		}
+		
 		
 		//CAMERA STUFF
 		gridcheck();
@@ -412,7 +467,7 @@ class script {
 		
 		//TILE PATTERN STUFF
 		int current_room = int(floor(((max_grid_y - min_grid_y + 1)*(grid_x - min_grid_x) + (grid_y - min_grid_y))/2));
-		room_tiles[current_room].draw(@g, @c, @spr, flipped);
+		room_tiles[current_room].draw(@g, @c, @spr, current_room == current_checkpoint_room ? current_checkpoint : -1, flipped);
 		
 		//TEST STUFF
 		//text_test.text(cam.x() + " - " + (cam.x() - (48 + cam_width / 2)) + " - " + particles_far[step_far].x);
@@ -503,6 +558,8 @@ class script {
 	}
 
 	void editor_draw(float sub_frame) {
+		uint i = 0;
+
 		for(int gx = min_grid_x; gx <= max_grid_x; gx++) {
 			for(int gy = min_grid_y; gy <= max_grid_y; gy++) {
 				float x1 =  gx * cam_width - (cam_width/2);
@@ -518,6 +575,11 @@ class script {
 				g.draw_line_world(20, 20, x1, y4, x2, y4, 5, 0xFFFFFFFF);
 				g.draw_line_world(20, 20, x1, y1, x1, y2, 5, 0xFFFFFFFF);
 				g.draw_line_world(20, 20, x2, y1, x2, y2, 5, 0xFFFFFFFF);
+				if ((abs(gy+1) % 2) == 1) {
+					text_test.text(formatInt(i));
+					text_test.draw_world(20, 1, x1 + 20, y3 + 80, 2, 2, 0);
+					i++;
+				}
 			}
 		}
 	}
@@ -609,7 +671,7 @@ class script {
 						e.sprite = ep.sprite;
 						e.frames = ep.sprite_frames;
 						e.speed = ep.animation_speed;
-						e.colour = ep.colour | 0xFF000000;
+						e.dont_inherit_hue = ep.dont_inherit_hue;
 						
 						room.enemies.insertLast(e);
 					}
@@ -648,11 +710,14 @@ class Room {
 	[text] array<Pos> triggers;
 	[hidden] array<Enemy> enemies;
 	
+	float blinki = 0;
+	
 	uint32 tile_rgb = 0;
 	uint32 edge_rgb = 0;
 	uint32 body_rgb = 0;
 	uint32 bg_tile_rgb = 0;
 	uint32 bg_edge_rgb = 0;
+	uint32 enemy_rgb = 0;
 	
 	uint32 get_tile_rgb() {
 		if(tile_rgb == 0) {
@@ -689,6 +754,13 @@ class Room {
 		return bg_edge_rgb;
 	}
 	
+	uint32 get_enemy_rgb() {
+		if(enemy_rgb == 0) {
+			enemy_rgb = hsv_to_rgb(hue, 1, 1);
+		}
+		return enemy_rgb;
+	}
+
 	void step(camera@ cam, fog_setting@ fog, sprites@ spr, bool flipped) {
 		fog.colour(19, 10, body_rgb);
 		fog.percent(19, 10, 1);
@@ -699,6 +771,10 @@ class Room {
 				enemies[i].step(spr, c, y_coord, flipped);
 			}
 		}
+		blinki += 0.25;
+		if (blinki > 2) {
+			blinki -= 2;
+		}
 	}
 	
 	void enter() {
@@ -707,12 +783,12 @@ class Room {
 		}
 	}
 	
-	void draw(scene@ g, canvas@ c, sprites@ spr, bool flipped) {
+	void draw(scene@ g, canvas@ c, sprites@ spr, int checkpoint_index, bool flipped) {
 		draw_tile_pattern(@g, @spr, tiles, pattern, get_tile_rgb(), get_edge_rgb(), 19, flipped);
 		draw_tile_pattern(@g, @spr, bg_tiles, bg_pattern, get_bg_tile_rgb(), get_bg_edge_rgb(), 15, flipped);
-		draw_trigger_sprites(@g, @spr, triggers, 18, flipped);
+		draw_trigger_sprites(@g, @spr, triggers, 18, checkpoint_index, flipped);
 		draw_text_sprites(@c, @spr, name);
-		draw_enemies(@g, @spr, flipped);
+		draw_enemies(@g, @spr, get_enemy_rgb(), flipped);
 	}
 	
 	void draw_tile_pattern(scene@ g, sprites@ spr, array<Pos> tiles, int pattern, uint32 c_pattern, uint32 c_edge, int layer, bool flipped) {
@@ -768,10 +844,13 @@ class Room {
 		}
 	}
 
-	void draw_trigger_sprites(scene@ g, sprites@ spr, array<Pos> triggers, int layer, bool flipped) {
+	void draw_trigger_sprites(scene@ g, sprites@ spr, array<Pos> triggers, int layer, int checkpoint_index, bool flipped) {
 		int room_ht = cam_height + y_buffer;
 		int midy = (y_coord * room_ht) - room_ht/2;
 		for(uint i = 0; i < triggers.length; i++) {
+			uint32 door_flash_col = checkpoint_index == i ? 0xFFFFFFFF : 0xFFA6A6A6;
+			uint32 door_unflash_col = checkpoint_index == i ? 0xFFE0E0E0 : 0xFFA0A0A0;
+			uint32 door_col = floor(blinki) == 0 ? door_unflash_col : door_flash_col;
 			if (!flipped) {
 				switch(triggers[i].e) {
 					case 0:
@@ -781,10 +860,10 @@ class Room {
 						spr.draw_world(layer, 0, "door", 0, 0, triggers[i].x - 36, triggers[i].y + 97, 0, 1, -1, 0xFFFFFFFF);
 						break;
 					case 2:
-						spr.draw_world(layer, 0, "cp", 0, 0, triggers[i].x - 36, triggers[i].y - 97, 0, 1, 1, 0xFFFFFFFF);
+						spr.draw_world(layer, 0, "cp", 0, 0, triggers[i].x - 36, triggers[i].y - 97, 0, 1, 1, door_col);
 						break;
 					case 3:
-						spr.draw_world(layer, 0, "cp", 0, 0, triggers[i].x - 36, triggers[i].y + 97, 0, 1, -1, 0xFFFFFFFF);
+						spr.draw_world(layer, 0, "cp", 0, 0, triggers[i].x - 36, triggers[i].y + 97, 0, 1, -1, door_col);
 						break;
 				}
 			} else {
@@ -796,19 +875,19 @@ class Room {
 						spr.draw_world(layer, 0, "door", 0, 0, triggers[i].x - 36, 2*midy - triggers[i].y - 97, 0, 1, 1, 0xFFFFFFFF);
 						break;
 					case 2:
-						spr.draw_world(layer, 0, "cp", 0, 0, triggers[i].x - 36, 2*midy - triggers[i].y + 97, 0, 1, -1, 0xFFFFFFFF);
+						spr.draw_world(layer, 0, "cp", 0, 0, triggers[i].x - 36, 2*midy - triggers[i].y + 97, 0, 1, -1, door_col);
 						break;
 					case 3:
-						spr.draw_world(layer, 0, "cp", 0, 0, triggers[i].x - 36, 2*midy - triggers[i].y - 97, 0, 1, 1, 0xFFFFFFFF);
+						spr.draw_world(layer, 0, "cp", 0, 0, triggers[i].x - 36, 2*midy - triggers[i].y - 97, 0, 1, 1, door_col);
 						break;
 				}
 			}
 		}
 	}
 	
-	void draw_enemies(scene@ g, sprites@ spr, bool flipped) {
+	void draw_enemies(scene@ g, sprites@ spr, uint32 col, bool flipped) {
 		for (uint i = 0; i < enemies.length(); i++) {
-			enemies[i].draw(g, spr, y_coord, flipped);
+			enemies[i].draw(g, spr, col, y_coord, flipped);
 		}
 	}
 
@@ -918,7 +997,7 @@ class Enemy {
 	[hidden] string sprite;
 	[hidden] uint frames;
 	[hidden] float speed;
-	[hidden] uint colour;
+	[hidden] bool dont_inherit_hue;
 	
 	// 0: move forwards
 	// 1: move backwards
@@ -995,7 +1074,7 @@ class Enemy {
 		
 	}
 
-	void draw(scene@ g, sprites@ spr, int y_coord, bool flipped) {
+	void draw(scene@ g, sprites@ spr, uint32 col, int y_coord, bool flipped) {
 		int room_ht = cam_height + y_buffer;
 		int midy = (y_coord * room_ht) - room_ht/2;
 		float x1 = start_x;
@@ -1012,8 +1091,7 @@ class Enemy {
 		spr.draw_world(18, 8, indexed_name(sprite, current_frame, frames), 0, 0,
 					   x1 * (1.0 - current_progress) + x2 * current_progress,
 					   y1 * (1.0 - current_progress) + y2 * current_progress,
-					   0, 1, y_scale, colour);
-		rectangle@ r = spr.get_sprite_rect(indexed_name(sprite, current_frame, frames), 0);			   
+					   0, 1, y_scale, dont_inherit_hue ? 0xFFFFFFFF : col);	   
 	}
 }
 
@@ -1028,13 +1106,14 @@ class EnemyPlacer : trigger_base {
 	
 	[boolean] bool align_x = false;
 	[boolean] bool align_y = false;
+	[boolean] bool snap_to_grid = false;
 	
 	[text] string sprite = "";
 	[text] uint sprite_frames = 0;
+	[boolean] bool dont_inherit_hue = false;
 	// Measured in frames/second
 	[text] float animation_speed = 1;
 	float current_frame = 0;
-	[colour] uint colour = 0xffffff;
 	
 	script@ s;
 	sprites@ spr;
@@ -1051,10 +1130,13 @@ class EnemyPlacer : trigger_base {
 	void editor_step() {
 		if (align_x) {
 			end_x = self.x();
-			align_x = false;
-		} else if (align_y) {
+		}
+		if (align_y) {
 			end_y = self.y();
-			align_y = false;
+		}
+		if (snap_to_grid) {
+			self.x(round(self.x() / 48) * 48);
+			self.y(round(self.y() / 48) * 48);
 		}
 		editor_sync_vars_menu();
 		current_frame += animation_speed/60;
@@ -1065,8 +1147,8 @@ class EnemyPlacer : trigger_base {
 	
 	void editor_draw(float f) {
 		s.g.draw_line_world(20, 0, self.x(), self.y(), end_x, end_y, 2, 0xA0FFFFFF);
-		spr.draw_world(20, 0, indexed_name(sprite, current_frame, sprite_frames), 0, 0, self.x(), self.y(), 0, 1, 1, colour | 0xFF000000);
-		spr.draw_world(20, 0, indexed_name(sprite, current_frame, sprite_frames), 0, 0, end_x, end_y, 0, 1, 1, colour | 0x90000000);
+		spr.draw_world(20, 0, indexed_name(sprite, current_frame, sprite_frames), 0, 0, self.x(), self.y(), 0, 1, 1, 0xFFFFFFFF);
+		spr.draw_world(20, 0, indexed_name(sprite, current_frame, sprite_frames), 0, 0, end_x, end_y, 0, 1, 1, 0x90FFFFFFFF);
 	}
 }
 
