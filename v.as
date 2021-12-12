@@ -172,7 +172,16 @@ class script {
 	int step_far = 0;
 	int step_mid = 0;
 	int step_near = 0;
-	
+
+	//DEATH STUFF
+	bool was_dead = false;
+	bool dying = false;
+	int dying_step = 0;
+	int dead_x = 0;
+	int dead_y = 0;
+
+	uint32 regular_color = 0xFF4B4BF3;
+
 	// Unrealistic number, change previous_room to signed and this to -1 if this becomes realistic somehow
 	uint previous_room = 99999;
 	
@@ -436,6 +445,8 @@ class script {
 			dm.idle_fric(1728);
 		}
 		
+		//DEATH STUFF, PUTTING IT IN A SUBFUNCTION TO KEEP IT CLEAN
+		death_step();
 		
 		//CAMERA STUFF
 		gridcheck();
@@ -444,9 +455,61 @@ class script {
 		if (current_room != previous_room)
 			room_tiles[current_room].enter();
 		previous_room = current_room;
-		room_tiles[current_room].step(@cam, @fog, spr, flipped);
+		room_tiles[current_room].step(@cam, @dm, @fog, spr, flipped);
 		
 	}
+
+	void death_step() {
+		if (dm.dead() == true && was_dead == false) {
+			dead_x = dm.x();
+			dead_y = dm.y();
+			dying = true;
+		}
+
+		if (dying) {
+			dm.x(dead_x);
+			dm.y(dead_y);
+			dm.prev_x(dead_x);
+			dm.prev_y(dead_y);
+			dm.set_speed_xy(0, 0);
+			switch (dying_step % 6) {
+				case 0:
+				case 1:
+					fog.colour(18, 10, 0xFFAB1908);
+					fog.percent(18, 10, 1);
+					cam.change_fog(@fog, 0);
+					break;
+				case 2:
+				case 3:
+					fog.colour(18, 10, 0xFFD11C08);
+					fog.percent(18, 10, 1);
+					cam.change_fog(@fog, 0);
+					break;
+				case 4:
+				case 5:
+					fog.colour(18, 10, 0xFF9C1708);
+					fog.percent(18, 10, 1);
+					cam.change_fog(@fog, 0);
+					break;
+			}
+			dying_step++;
+		}
+
+		if (dying_step > 47) {
+			dying = false;
+			dm.dead(false);
+			dying_step = 0;
+			dm.x(g.get_checkpoint_x(0));
+			dm.y(g.get_checkpoint_y(0));
+			dm.prev_x(g.get_checkpoint_x(0));
+			dm.prev_y(g.get_checkpoint_y(0));
+			fog.colour(18, 10, regular_color);
+			fog.percent(18, 10, 1);
+			cam.change_fog(@fog, 0);
+		}
+		was_dead = dm.dead();
+	}
+
 	
 	void draw(float subframe) {
 		c.draw_rectangle(-805,455,-600,-455,0,0xFF000000);
@@ -502,8 +565,27 @@ class script {
 		g.swap_layer_order(17, 18);
 		
 		@dm = controller_entity(0).as_dustman();
+		dm.auto_respawn(false);
 		@cam = get_camera(0);
 		@fog = cam.get_fog();
+
+		//SET PLAYER CHARACTER COLOR
+		dictionary charcolors = {
+			{'dustman', 0xFF4B4BF3},
+			{'dustgirl', 0xFFFB3E3E},
+			{'dustkid', 0xFFCC70CA},
+			{'dustworth', 0xFF60D470},
+			{'vdustman', 0xFF4B4BF3},
+			{'vdustgirl', 0xFFFB3E3E},
+			{'vdustkid', 0xFFCC70CA},
+			{'vdustworth', 0xFF60D470}
+		};
+		regular_color = uint32(charcolors[dm.character()]);
+		fog.colour(18, 10, regular_color);
+		fog.percent(18, 10, 1);
+		cam.change_fog(@fog, 0);
+
+
 		cam.script_camera(true);
 		cam.screen_height(cam_height);
 		gridcheck();
@@ -761,14 +843,13 @@ class Room {
 		return enemy_rgb;
 	}
 
-	void step(camera@ cam, fog_setting@ fog, sprites@ spr, bool flipped) {
+	void step(camera@ cam, dustman@ dm, fog_setting@ fog, sprites@ spr, bool flipped) {
 		fog.colour(19, 10, body_rgb);
 		fog.percent(19, 10, 1);
 		cam.change_fog(@fog, 0);
-		controllable@ c = controller_controllable(0);
-		if (c != null) {
+		if (dm != null) {
 			for (uint i = 0; i < enemies.length(); i++) {
-				enemies[i].step(spr, c, y_coord, flipped);
+				enemies[i].step(spr, dm, y_coord, flipped);
 			}
 		}
 		blinki += 0.25;
@@ -1012,11 +1093,11 @@ class Enemy {
 		current_frame = 0;
 	}
 	
-	void step(sprites@ spr, controllable@ c, int y_coord, bool flipped) {
+	void step(sprites@ spr, dustman@ dm, int y_coord, bool flipped) {
 		if (current_state == 2)
 			return;
-		if (collide_with(spr, c, y_coord, flipped)) {
-			c.as_dustman().kill(true);
+		if (collide_with(spr, dm, y_coord, flipped)) {
+			dm.dead(true);
 		}
 		current_frame += speed/60;
 		if (current_frame > frames) {
@@ -1047,7 +1128,7 @@ class Enemy {
 		}
 	}
 	
-	bool collide_with(sprites@ spr, controllable@ c, int y_coord, bool flipped) {
+	bool collide_with(sprites@ spr, dustman@ dm, int y_coord, bool flipped) {
 		int room_ht = cam_height + y_buffer;
 		int midy = (y_coord * room_ht) - room_ht/2;
 		float curr_x = start_x * (1.0 - current_progress) + end_x * current_progress;
@@ -1058,18 +1139,18 @@ class Enemy {
 			curr_y = (2 * midy - start_y) * (1.0 - current_progress) + (2 * midy - end_y) * current_progress;
 		}
 		rectangle @coll = spr.get_sprite_rect(indexed_name(sprite, current_frame, frames), 0);
-		rectangle @ccoll = c.hit_rectangle();
+		rectangle @ccoll = dm.hit_rectangle();
 
 		if (flipped) {
-			return !(c.x() + ccoll.right() < coll.left() + curr_x ||
-					 c.x() + ccoll.left() > coll.right() + curr_x ||
-					 c.y() + ccoll.bottom() < -coll.bottom() + curr_y ||
-					 c.y() + ccoll.top() > -coll.top() + curr_y);
+			return !(dm.x() + ccoll.right() < coll.left() + curr_x ||
+					 dm.x() + ccoll.left() > coll.right() + curr_x ||
+					 dm.y() + ccoll.bottom() < -coll.bottom() + curr_y ||
+					 dm.y() + ccoll.top() > -coll.top() + curr_y);
 		} else {
-			return !(c.x() + ccoll.right() < coll.left() + curr_x ||
-					 c.x() + ccoll.left() > coll.right() + curr_x ||
-					 c.y() + ccoll.bottom() < coll.top() + curr_y ||
-					 c.y() + ccoll.top() > coll.bottom() + curr_y);
+			return !(dm.x() + ccoll.right() < coll.left() + curr_x ||
+					 dm.x() + ccoll.left() > coll.right() + curr_x ||
+					 dm.y() + ccoll.bottom() < coll.top() + curr_y ||
+					 dm.y() + ccoll.top() > coll.bottom() + curr_y);
 		}
 		
 	}
