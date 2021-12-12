@@ -162,7 +162,7 @@ class script {
 	[text] array<Room> room_tiles;
 	[boolean] bool detect_tiles = false;
 	int current_checkpoint_room = -1;
-	uint current_checkpoint;
+	int current_checkpoint;
 	sprites@ spr;
 	
 	//PARTICLE STUFF
@@ -177,13 +177,12 @@ class script {
 	bool was_dead = false;
 	bool dying = false;
 	int dying_step = 0;
-	int dead_x = 0;
-	int dead_y = 0;
+	float dead_x = 0;
+	float dead_y = 0;
 
 	uint32 regular_color = 0xFF4B4BF3;
 
-	// Unrealistic number, change previous_room to signed and this to -1 if this becomes realistic somehow
-	uint previous_room = 99999;
+	int previous_room = -1;
 	
 	script() {
 		@g = get_scene();
@@ -1229,7 +1228,7 @@ class EnemyPlacer : trigger_base {
 	void editor_draw(float f) {
 		s.g.draw_line_world(20, 0, self.x(), self.y(), end_x, end_y, 2, 0xA0FFFFFF);
 		spr.draw_world(20, 0, indexed_name(sprite, current_frame, sprite_frames), 0, 0, self.x(), self.y(), 0, 1, 1, 0xFFFFFFFF);
-		spr.draw_world(20, 0, indexed_name(sprite, current_frame, sprite_frames), 0, 0, end_x, end_y, 0, 1, 1, 0x90FFFFFFFF);
+		spr.draw_world(20, 0, indexed_name(sprite, current_frame, sprite_frames), 0, 0, end_x, end_y, 0, 1, 1, 0xFFFFFFFF);
 	}
 }
 
