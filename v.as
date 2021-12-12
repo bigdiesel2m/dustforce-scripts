@@ -174,6 +174,8 @@ class script {
 	int step_near = 0;
 
 	//DEATH STUFF
+	float respawn_x;
+	float respawn_y;
 	bool was_dead = false;
 	bool dying = false;
 	int dying_step = 0;
@@ -454,23 +456,17 @@ class script {
 		if (current_room != previous_room)
 			room_tiles[current_room].enter();
 		previous_room = current_room;
-		room_tiles[current_room].step(@cam, @dm, @fog, spr, flipped);
+		room_tiles[current_room].step(@this, @cam, @dm, @fog, spr, flipped);
 		
 	}
 
 	void death_step() {
 		if (dm.dead() == true && was_dead == false) {
-			dead_x = dm.x();
-			dead_y = dm.y();
 			dying = true;
+			dm.freeze_frame_timer(500);
 		}
 
 		if (dying) {
-			dm.x(dead_x);
-			dm.y(dead_y);
-			dm.prev_x(dead_x);
-			dm.prev_y(dead_y);
-			dm.set_speed_xy(0, 0);
 			switch (dying_step % 6) {
 				case 0:
 				case 1:
@@ -497,16 +493,22 @@ class script {
 		if (dying_step > 47) {
 			dying = false;
 			dm.dead(false);
+			dm.freeze_frame_timer(0);
 			dying_step = 0;
-			dm.x(g.get_checkpoint_x(0));
-			dm.y(g.get_checkpoint_y(0));
-			dm.prev_x(g.get_checkpoint_x(0));
-			dm.prev_y(g.get_checkpoint_y(0));
+			dm.x(respawn_x);
+			dm.y(respawn_y);
+			dm.prev_x(respawn_x);
+			dm.prev_y(respawn_y);
 			fog.colour(18, 10, regular_color);
 			fog.percent(18, 10, 1);
 			cam.change_fog(@fog, 0);
 		}
 		was_dead = dm.dead();
+	}
+
+	void set_checkpoint(float x, float y) {
+		respawn_x = x + 42;
+		respawn_y = y;
 	}
 
 	
@@ -533,7 +535,7 @@ class script {
 		
 		//TEST STUFF
 		//text_test.text(cam.x() + " - " + (cam.x() - (48 + cam_width / 2)) + " - " + particles_far[step_far].x);
-		//text_test.text(30 + " - " + hsv_to_rgb(30, 1, 1));
+		//text_test.text(respawn_x + " - " + respawn_y);
 		//c.draw_text(text_test, 0, 250, 1, 1, 0);
 	}
 	
@@ -583,7 +585,6 @@ class script {
 		fog.colour(18, 10, regular_color);
 		fog.percent(18, 10, 1);
 		cam.change_fog(@fog, 0);
-
 
 		cam.script_camera(true);
 		cam.screen_height(cam_height);
@@ -725,7 +726,6 @@ class script {
 				int doorint = g.get_entity_collision(gy * grid_height - (3*grid_height/2), gy * grid_height + (grid_height/2), gx * cam_width - cam_width/2, gx * cam_width + cam_width/2, 16);
 				for(int j=0; j < doorint; j++) {
 					entity@ CurrentEntity = g.get_entity_collision_index(j);
-					//puts(CurrentEntity.type_name());
 					if (CurrentEntity.type_name() == "level_door") {
 						if (CurrentEntity.y() > gy * grid_height - grid_height/2) {
 							Pos p = Pos(int(6*round(CurrentEntity.x()/6)),int(6*round(CurrentEntity.y()/6)), 0);
@@ -738,37 +738,31 @@ class script {
 						scripttrigger@ s = CurrentEntity.as_scripttrigger();
 						if (@s == null)
 							continue;
-						EnemyPlacer@ ep = cast<EnemyPlacer>(s.get_object());
-						if(@ep == null)
-							continue;
-						Enemy@ e = Enemy();
-						e.start_x = CurrentEntity.x();
-						e.start_y = CurrentEntity.y();
-						e.end_x = ep.end_x;
-						e.end_y = ep.end_y;
-						e.duration = ep.move_duration;
-						e.repeat = ep.repeat;
-						e.reverse = ep.reverse_at_end;
-						e.sprite = ep.sprite;
-						e.frames = ep.sprite_frames;
-						e.speed = ep.animation_speed;
-						e.dont_inherit_hue = ep.dont_inherit_hue;
-						
-						room.enemies.insertLast(e);
-					}
-				}
 
-				//CHECKPOINT DETECTION AND STORAGE
-				int cpint = g.get_entity_collision(gy * grid_height - (3*grid_height/2), gy * grid_height + (grid_height/2), gx * cam_width - cam_width/2, gx * cam_width + cam_width/2, 20);
-				for(int j=0; j < cpint; j++) {
-					entity@ CurrentEntity = g.get_entity_collision_index(j);
-					if (CurrentEntity.type_name() == "check_point") {
-						if (CurrentEntity.y() > gy * grid_height - grid_height/2) {
-							Pos p = Pos(int(6*round(CurrentEntity.x()/6)),int(6*round(CurrentEntity.y()/6)), 2);
-							room.triggers.insertLast(p);
-						} else {
-							Pos p = Pos(int(6*round(CurrentEntity.x()/6)),int(6*round((2*(gy * grid_height - grid_height/2) - CurrentEntity.y())/6)), 3);
-							room.triggers.insertLast(p);
+						if (s.type_name() == "EnemyPlacer") {
+							EnemyPlacer@ ep = cast<EnemyPlacer>(s.get_object());
+							Enemy@ e = Enemy();
+							e.start_x = CurrentEntity.x();
+							e.start_y = CurrentEntity.y();
+							e.end_x = ep.end_x;
+							e.end_y = ep.end_y;
+							e.duration = ep.move_duration;
+							e.repeat = ep.repeat;
+							e.reverse = ep.reverse_at_end;
+							e.sprite = ep.sprite;
+							e.frames = ep.sprite_frames;
+							e.speed = ep.animation_speed;
+							e.dont_inherit_hue = ep.dont_inherit_hue;
+							
+							room.enemies.insertLast(e);
+						} else if (s.type_name() == "CheckPlacer") {
+							if (CurrentEntity.y() > gy * grid_height - grid_height/2) {
+								Pos p = Pos(int(6*round(CurrentEntity.x()/6)),int(6*round(CurrentEntity.y()/6)), 2);
+								room.triggers.insertLast(p);
+							} else {
+								Pos p = Pos(int(6*round(CurrentEntity.x()/6)),int(6*round((2*(gy * grid_height - grid_height/2) - CurrentEntity.y())/6)), 3);
+								room.triggers.insertLast(p);
+							}
 						}
 					}
 				}
@@ -842,7 +836,7 @@ class Room {
 		return enemy_rgb;
 	}
 
-	void step(camera@ cam, dustman@ dm, fog_setting@ fog, sprites@ spr, bool flipped) {
+	void step(script@ s, camera@ cam, dustman@ dm, fog_setting@ fog, sprites@ spr, bool flipped) {
 		fog.colour(19, 10, body_rgb);
 		fog.percent(19, 10, 1);
 		cam.change_fog(@fog, 0);
@@ -850,10 +844,46 @@ class Room {
 			for (uint i = 0; i < enemies.length(); i++) {
 				enemies[i].step(spr, dm, y_coord, flipped);
 			}
+			for (uint i = 0; i < triggers.length(); i++) {
+				if (triggers[i].e == 2 || triggers[i].e == 3) {
+					step_check(s, triggers[i], dm, spr, flipped);
+				}
+			}
 		}
 		blinki += 0.25;
 		if (blinki > 2) {
 			blinki -= 2;
+		}
+	}
+
+	void step_check(script@ s, Pos p, dustman@ dm, sprites@ spr, bool flipped) {
+		int room_ht = cam_height + y_buffer;
+		int midy = (y_coord * room_ht) - room_ht/2;
+		bool colliding;
+		//GETS RECTANGLES FOR DUSTMAN AND THE CHECKPOINT
+		rectangle @coll = spr.get_sprite_rect("cp", 0);
+		rectangle @ccoll = dm.hit_rectangle();
+
+		//CHECKS IF THE TWO RECTANGLES ARE COLLIDING
+		if (flipped) {
+			colliding = !(dm.x() + ccoll.right() < coll.left() + p.x ||
+					 dm.x() + ccoll.left() > coll.right() + p.x ||
+					 dm.y() + ccoll.bottom() < -coll.bottom() + (2*midy - p.y) ||
+					 dm.y() + ccoll.top() > -coll.top() + (2*midy - p.y));
+		} else {
+			colliding = !(dm.x() + ccoll.right() < coll.left() + p.x ||
+					 dm.x() + ccoll.left() > coll.right() + p.x ||
+					 dm.y() + ccoll.bottom() < coll.top() + p.y ||
+					 dm.y() + ccoll.top() > coll.bottom() + p.y);
+		}
+
+		//IF THEY'RE COLLIDING, SET RESPAWN VALUE TO THAT CHECKPOINT'S POSITION, DEPENDING ON WHETHER IT'S RIGHTSIDE UP OR NOT
+		if (colliding) {
+			if (p.e == 2) {
+				s.set_checkpoint(p.x, p.y);
+			} else if (p.e == 3) {
+				s.set_checkpoint(p.x, (2*midy - p.y));
+			}
 		}
 	}
 	
@@ -940,10 +970,10 @@ class Room {
 						spr.draw_world(layer, 0, "door", 0, 0, triggers[i].x - 36, triggers[i].y + 97, 0, 1, -1, 0xFFFFFFFF);
 						break;
 					case 2:
-						spr.draw_world(layer, 0, "cp", 0, 0, triggers[i].x - 36, triggers[i].y - 97, 0, 1, 1, door_col);
+						spr.draw_world(layer, 0, "cp", 0, 0, triggers[i].x, triggers[i].y - 97, 0, 1, 1, door_col);
 						break;
 					case 3:
-						spr.draw_world(layer, 0, "cp", 0, 0, triggers[i].x - 36, triggers[i].y + 97, 0, 1, -1, door_col);
+						spr.draw_world(layer, 0, "cp", 0, 0, triggers[i].x, triggers[i].y + 97, 0, 1, -1, door_col);
 						break;
 				}
 			} else {
@@ -955,10 +985,10 @@ class Room {
 						spr.draw_world(layer, 0, "door", 0, 0, triggers[i].x - 36, 2*midy - triggers[i].y - 97, 0, 1, 1, 0xFFFFFFFF);
 						break;
 					case 2:
-						spr.draw_world(layer, 0, "cp", 0, 0, triggers[i].x - 36, 2*midy - triggers[i].y + 97, 0, 1, -1, door_col);
+						spr.draw_world(layer, 0, "cp", 0, 0, triggers[i].x, 2*midy - triggers[i].y + 97, 0, 1, -1, door_col);
 						break;
 					case 3:
-						spr.draw_world(layer, 0, "cp", 0, 0, triggers[i].x - 36, 2*midy - triggers[i].y - 97, 0, 1, 1, door_col);
+						spr.draw_world(layer, 0, "cp", 0, 0, triggers[i].x, 2*midy - triggers[i].y - 97, 0, 1, 1, door_col);
 						break;
 				}
 			}
@@ -1229,6 +1259,34 @@ class EnemyPlacer : trigger_base {
 		s.g.draw_line_world(20, 0, self.x(), self.y(), end_x, end_y, 2, 0xA0FFFFFF);
 		spr.draw_world(20, 0, indexed_name(sprite, current_frame, sprite_frames), 0, 0, self.x(), self.y(), 0, 1, 1, 0xFFFFFFFF);
 		spr.draw_world(20, 0, indexed_name(sprite, current_frame, sprite_frames), 0, 0, end_x, end_y, 0, 1, 1, 0xFFFFFFFF);
+	}
+}
+
+class CheckPlacer : trigger_base {
+	[boolean] bool snap_to_grid = false;
+
+	script@ s;
+	sprites@ spr;
+	scripttrigger@ self;
+	
+	void init(script@ s, scripttrigger@ self) {
+		@spr = create_sprites();
+		spr.add_sprite_set("script");
+		@this.s = s;
+		@this.self = @self;
+	}
+	
+	void editor_step() {
+		if (snap_to_grid) {
+			self.x(round(self.x() / 6) * 6);
+			self.y(round(self.y() / 6) * 6);
+		}
+		editor_sync_vars_menu();
+	}
+	
+	void editor_draw(float f) {						
+		spr.draw_world(20, 0, "cp", 0, 0, self.x(), self.y() - 97, 0, 1, 1, 0xFFFFFFFF);
+		spr.draw_world(20, 0, "cp", 0, 0, self.x(), self.y() + 97, 0, 1, -1, 0xFFFFFFFF);
 	}
 }
 
