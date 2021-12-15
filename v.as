@@ -467,11 +467,13 @@ class script {
         
         // Alternate air physics 
         float y_speed = dm.y_speed();
-        if(!dm.ground())
+        if(!dm.ground()) {
+            dm.dash(0);
             if(y_speed < 600)
                 y_speed = 600;
             else if(y_speed > 1700)
                 y_speed = 1700;
+        }
         dm.set_speed_xy(dm.x_intent()*700, y_speed);
         
     }
@@ -745,7 +747,7 @@ class Room {
     [text] array<Pos> triggers;
     [hidden] array<Enemy> enemies;
     
-    bool room_generated = false;
+    bool tiles_generated = false;
     
     scene@ g;
     float blinki = 0;
@@ -895,8 +897,8 @@ class Room {
                         continue;
                     }
                     
-                    e.start_x = CurrentEntity.x();
-                    e.start_y = CurrentEntity.y();
+                    e.start_x = ep.start_x;
+                    e.start_y = ep.start_y;
                     
                     e.end_x = ep.end_x;
                     e.end_y = ep.end_y;
@@ -951,16 +953,17 @@ class Room {
         rectangle @ccoll = dm.hit_rectangle();
 
         //CHECKS IF THE TWO RECTANGLES ARE COLLIDING
+		//flipped = p.e == 3 ? flipped : !flipped;
         if (flipped) {
             colliding = !(dm.x() + ccoll.right() < coll.left() + p.x ||
                      dm.x() + ccoll.left() > coll.right() + p.x ||
-                     dm.y() + ccoll.bottom() < -coll.bottom() + (2*midy - p.y) ||
-                     dm.y() + ccoll.top() > -coll.top() + (2*midy - p.y));
+                     dm.y() + ccoll.bottom() < -coll.bottom() + (2*midy - p.y) + 97 ||
+                     dm.y() + ccoll.top() > -coll.top() + (2*midy - p.y) + 97);
         } else {
             colliding = !(dm.x() + ccoll.right() < coll.left() + p.x ||
                      dm.x() + ccoll.left() > coll.right() + p.x ||
-                     dm.y() + ccoll.bottom() < coll.top() + p.y ||
-                     dm.y() + ccoll.top() > coll.bottom() + p.y);
+                     dm.y() + ccoll.bottom() < coll.top() + p.y - 97 ||
+                     dm.y() + ccoll.top() > coll.bottom() + p.y - 97);
         }
 
         //IF THEY'RE COLLIDING, SET RESPAWN VALUE TO THAT CHECKPOINT'S POSITION, DEPENDING ON WHETHER IT'S RIGHTSIDE UP OR NOT
@@ -1056,6 +1059,7 @@ class Room {
             uint32 door_flash_col = is_respawn_checkpoint ? 0xFFFFFFFF : 0xFFA6A6A6;
             uint32 door_unflash_col = is_respawn_checkpoint ? 0xFFE0E0E0 : 0xFFA0A0A0;
             uint32 door_col = floor(blinki) == 0 ? door_unflash_col : door_flash_col;
+
             if (!flipped) {
                 switch(triggers[i].e) {
                     case 0:
@@ -1304,6 +1308,9 @@ class Enemy {
 class EnemyPlacer : trigger_base {
     [position,mode:world,layer:19,y:"end_y"] float end_x;
     [hidden] float end_y;
+	[boolean] bool start_at_place = true;
+    [position,mode:world,layer:19,y:"start_y"] float start_x;
+    [hidden] float start_y;	
     
     [boolean] bool repeat;
     [boolean] bool reverse_at_end;
@@ -1334,15 +1341,19 @@ class EnemyPlacer : trigger_base {
     }
     
     void editor_step() {
+		if (start_at_place) {
+			start_x = self.x();
+			start_y = self.y();
+		}
         if (align_x) {
-            end_x = self.x();
+            end_x = start_x;
         }
         if (align_y) {
-            end_y = self.y();
+            end_y = start_y;
         }
         if (snap_to_grid) {
-            self.x(round(self.x() / 48) * 48);
-            self.y(round(self.y() / 48) * 48);
+            self.x(round(start_x / 48) * 48);
+            self.y(round(start_y / 48) * 48);
         }
         editor_sync_vars_menu();
         current_frame += animation_speed/60;
@@ -1352,8 +1363,8 @@ class EnemyPlacer : trigger_base {
     }
     
     void editor_draw(float f) {
-        s.g.draw_line_world(20, 0, self.x(), self.y(), end_x, end_y, 2, 0xA0FFFFFF);
-        spr.draw_world(20, 0, indexed_name(sprite, current_frame, sprite_frames), 0, 0, self.x(), self.y(), 0, 1, 1, 0xFFFFFFFF);
+        s.g.draw_line_world(20, 0, start_x, start_y, end_x, end_y, 2, 0xA0FFFFFF);
+        spr.draw_world(20, 0, indexed_name(sprite, current_frame, sprite_frames), 0, 0, start_x, start_y, 0, 1, 1, 0xFFFFFFFF);
         spr.draw_world(20, 0, indexed_name(sprite, current_frame, sprite_frames), 0, 0, end_x, end_y, 0, 1, 1, 0x90FFFFFF);
     }
 }
