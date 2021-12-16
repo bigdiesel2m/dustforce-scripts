@@ -744,8 +744,9 @@ class Room {
     array<Pos> tiles;
     array<Pos> bg_tiles;
     
-    [text] array<Pos> triggers;
+    [hidden] array<Pos> triggers;
     [hidden] array<Enemy> enemies;
+    [hidden] array<Text> textboxes;
     
     bool tiles_generated = false;
     
@@ -870,6 +871,7 @@ class Room {
     void detect_entities() {
         triggers.resize(0);
         enemies.resize(0);
+        textboxes.resize(0);
         
         //DOOR AND ENEMY DETECTION AND STORAGE
         int doorint = g.get_entity_collision(y_coord * grid_height - (3*grid_height/2), y_coord * grid_height + (grid_height/2), x_coord * cam_width - cam_width/2, x_coord * cam_width + cam_width/2, 16);
@@ -919,6 +921,19 @@ class Room {
                         Pos p = Pos(int(6*round(CurrentEntity.x()/6)),int(6*round((2*(y_coord * grid_height - grid_height/2) - CurrentEntity.y())/6)), 3);
                         triggers.insertLast(p);
                     }
+                } else if (s.type_name() == "TextPlacer") {
+                    TextPlacer@ tp = cast<TextPlacer>(s.get_object());
+                    Text@ t = Text();
+                    
+                    if(@tp == null) {
+                        puts("Error! Null TextPlacer in room (" + x_coord + ", " + y_coord + ")");
+                        continue;
+                    }
+
+                    t.x = CurrentEntity.x();
+                    t.y = CurrentEntity.y();
+                    t.text = tp.text;
+                    textboxes.insertLast(t);
                 }
             }
         }
@@ -928,7 +943,7 @@ class Room {
         fog.colour(19, 10, body_rgb);
         fog.percent(19, 10, 1);
         cam.change_fog(@fog, 0);
-        if (@dm != null) {
+        if (@dm != null && !s.dying) {
             for (uint i = 0; i < enemies.length(); i++) {
                 enemies[i].step(spr, dm, y_coord, flipped);
             }
@@ -991,7 +1006,7 @@ class Room {
         draw_tile_pattern(@spr, tiles, pattern, get_tile_rgb(), get_edge_rgb(), 19, flipped);
         draw_tile_pattern(@spr, bg_tiles, bg_pattern, get_bg_tile_rgb(), get_bg_edge_rgb(), 15, flipped);
         draw_trigger_sprites(@spr, triggers, 18, respawn_x, respawn_y, flipped);
-        draw_text_sprites(@c, @spr, name);
+        draw_text_sprites(@c, @spr, name, flipped);
         draw_enemies(@spr, get_enemy_rgb(), flipped);
     }
     
@@ -1100,13 +1115,24 @@ class Room {
         }
     }
 
-    //THIS PUTS THE ROOM NAME AT THE BOTTOM OF THE SCREEN
-    void draw_text_sprites(canvas@ c, sprites@ spr, string name) {
+    void draw_text_sprites(canvas@ c, sprites@ spr, string name, bool flipped) {
         if (name != "") {
             c.draw_rectangle(-805,410,805,500,0,0xFF000000);
             int start = -16 * int(name.length());
             for(uint i = 0; i < name.length(); i++) {
                 spr.draw_hud(20, 20, name.substr(i,1), 0, 0, start + i*32, 415, 0, 0.5, 0.5, 0xFFC4C4E3);
+            }
+        }
+        for(uint i = 0; i < textboxes.length(); i++) {
+            //if (textboxes[i].text == "") continue;
+            int room_ht = cam_height + y_buffer;
+            int midy = (y_coord * room_ht) - room_ht/2;
+            for(uint j = 0; j < textboxes[i].text.length(); j++) {
+                if (!flipped) {
+                    spr.draw_world(20, 20, textboxes[i].text.substr(j,1), 0, 0, textboxes[i].x + j*16, textboxes[i].y, 0, 0.25, 0.25, 0xFFFFFFFF);
+                } else {
+                    spr.draw_world(20, 20, textboxes[i].text.substr(j,1), 0, 0, textboxes[i].x + j*16, 2*midy - textboxes[i].y, 0, 0.25, -0.25, 0xFFFFFFFF);
+                }
             }
         }
     }
@@ -1394,6 +1420,43 @@ class CheckPlacer : trigger_base {
     void editor_draw(float f) {                        
         spr.draw_world(20, 0, "cp", 0, 0, self.x(), self.y() - 97, 0, 1, 1, 0xFFFFFFFF);
         spr.draw_world(20, 0, "cp", 0, 0, self.x(), self.y() + 97, 0, 1, -1, 0xFFFFFFFF);
+    }
+}
+
+class Text {
+    [hidden] float x;
+    [hidden] float y;
+    [hidden] string text;
+}
+
+class TextPlacer : trigger_base {
+    [boolean] bool snap_to_grid = false;
+    [text] string text;
+    script@ s;
+    sprites@ spr;
+    scripttrigger@ self;
+    
+    void init(script@ s, scripttrigger@ self) {
+        @spr = create_sprites();
+        spr.add_sprite_set("script");
+        @this.s = s;
+        @this.self = @self;
+    }
+    
+    void editor_step() {
+        if (snap_to_grid) {
+            self.x(round(self.x() / 6) * 6);
+            self.y(round(self.y() / 6) * 6);
+        }
+        editor_sync_vars_menu();
+    }
+
+    void editor_draw(float sub_frame) {
+        if (text != "") {
+            for(uint i = 0; i < text.length(); i++) {
+                spr.draw_world(18, 20, text.substr(i,1), 0, 0, self.x() + i*16, self.y(), 0, 0.25, 0.25, 0xFFFFFFFF);
+            }
+        }
     }
 }
 
