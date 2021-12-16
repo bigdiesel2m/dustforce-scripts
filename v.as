@@ -132,6 +132,11 @@ const string EMBED_x2 = "vfont/x2.png";
 const string EMBED_y2 = "vfont/y2.png";
 const string EMBED_z2 = "vfont/z2.png";
 
+const string EMBED_save = "vsounds/gamesaved.ogg";
+const string EMBED_die = "vsounds/hurt.ogg";
+const string EMBED_flip = "vsounds/jump.ogg";
+const string EMBED_banger = "vsounds/pushingonwards.ogg";
+
 const float cam_height = 1152;
 const float cam_width = 1536;
 const float y_buffer = 192;
@@ -141,10 +146,10 @@ const float grid_height = cam_height + y_buffer;
 const int room_width = int(cam_width/48);
 const int room_height = int(grid_height/48);
 
-const int min_grid_x = -7;
-const int max_grid_x = 7;
-const int min_grid_y = -9;
-const int max_grid_y = 10;
+const int min_grid_x = -2;
+const int max_grid_x = 4;
+const int min_grid_y = -5;
+const int max_grid_y = 6;
 
 class script {
     scene@ g;
@@ -152,7 +157,8 @@ class script {
     camera@ cam;
     canvas@ c;
     fog_setting@ fog;
-    
+    audio@ music;
+
     //TEST STUFF
     textfield@ text_test;
     int test_int = 0;
@@ -162,6 +168,8 @@ class script {
     int grid_y = 0;
     bool flipped = false;
     
+	[text] float music_volume = 1;
+	
     //TILE STUFF
     [text] array<Room> room_tiles;
     [boolean] bool build_mirrors = false;
@@ -341,7 +349,14 @@ class script {
         msg.set_string("x", "x2");
         msg.set_string("y", "y2");
         msg.set_string("z", "z2");
-    }
+	}
+	
+	void build_sounds(message@ msg) {
+        msg.set_string("banger", "banger");
+        msg.set_string("die", "die");
+        msg.set_string("flip", "flip");
+        msg.set_string("save", "save");
+	}
     
     
     void step(int entities) {
@@ -388,6 +403,7 @@ class script {
         //FLIP HANDLING
         if (dm.jump_intent() != 0) {
             if (dm.ground() && !dying) {
+				g.play_script_stream("flip", 0, dm.x(), dm.y(), false, 1).time_scale(0.1);
                 float y_offset = dm.y() - cam.y();
                 if(!flipped) {
                     dm.y(cam.y() - grid_height - y_offset + 48 + 48);
@@ -444,27 +460,6 @@ class script {
             dm.y_intent(0);
         }
         
-        
-        // Messed up air physics
-        /*
-        if (!dm.ground()) {
-            dm.di_speed(2000 * 20);
-            dm.di_move_max(400 * 3);
-            dm.run_start(300 * 3);
-            dm.land_fric(1728 * 3);
-            dm.skid_fric(1152 * 20);
-            dm.idle_fric(1728 * 3);
-            dm.dash(0);
-        } else {
-            dm.di_speed(2000);
-            dm.di_move_max(400);
-            dm.run_start(300);
-            dm.land_fric(1728);
-            dm.skid_fric(1152);
-            dm.idle_fric(1728);
-        }
-        */
-        
         // Alternate air physics 
         float y_speed = dm.y_speed();
         if(!dm.ground()) {
@@ -482,6 +477,7 @@ class script {
     void death_step() {
         //DEATH STUFF
         if (dm.dead() == true && was_dead == false) {
+			g.play_script_stream("die", 0, dm.x(), dm.y(), false, 1).time_scale(0.5);
             dying = true;
             dm.freeze_frame_timer(500);
         }
@@ -570,6 +566,7 @@ class script {
     void on_level_start() {
         initialize();
         initialize_particles();
+		@music = @g.play_persistent_stream("banger", 1, true, music_volume, true);
     }
     
     
@@ -982,10 +979,15 @@ class Room {
         }
 
         //IF THEY'RE COLLIDING, SET RESPAWN VALUE TO THAT CHECKPOINT'S POSITION, DEPENDING ON WHETHER IT'S RIGHTSIDE UP OR NOT
-        if (colliding) {
+		if (colliding) {
+
             if (p.e == 2) {
+				if (s.respawn_x != p.x + 42 || s.respawn_y != p.y)
+					g.play_script_stream("save", 0, dm.x(), dm.y(), false, 1).time_scale(0.5);
                 s.set_checkpoint(p.x, p.y);
             } else if (p.e == 3) {
+				if (s.respawn_x != p.x + 42 || s.respawn_y != (2*midy - p.y))
+					g.play_script_stream("save", 0, dm.x(), dm.y(), false, 1).time_scale(0.5);
                 s.set_checkpoint(p.x, (2*midy - p.y));
             }
         }
