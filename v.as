@@ -134,7 +134,7 @@ const string EMBED_z2 = "vfont/z2.png";
 
 const string EMBED_save = "vsounds/gamesaved.ogg";
 const string EMBED_die = "vsounds/hurt.ogg";
-const string EMBED_flip = "vsounds/jump.ogg";
+const string EMBED_flip = "vsounds/jump2.ogg";
 const string EMBED_banger = "vsounds/pushingonwards.ogg";
 
 const float cam_height = 1152;
@@ -176,6 +176,7 @@ class script {
     bool streams_resized = false;
 
     sprites@ spr;
+    [hidden] bool hide_sprites = false;
     
     //PARTICLE STUFF
     array<Particle> particles_far(25);
@@ -367,11 +368,14 @@ class script {
         death_step();
         gridcheck();
         
+        if(dm.taunt_intent() == 1)
+            hide_sprites = !hide_sprites;
+        
         int current_room = get_current_room();
         if (current_room != previous_room)
-            room_tiles[current_room].enter();
+            room_tiles[current_room].enter(@cam, @fog);
         previous_room = current_room;
-        room_tiles[current_room].step(@this, @cam, @dm, @fog, spr, flipped);
+        room_tiles[current_room].step(@this, @dm, spr, flipped);
         
     }
     
@@ -403,7 +407,7 @@ class script {
         //FLIP HANDLING
         if (dm.jump_intent() != 0) {
             if (dm.ground() && !dying) {
-				g.play_script_stream("flip", 0, dm.x(), dm.y(), false, 1).time_scale(0.1);
+				g.play_script_stream("flip", 0, dm.x(), dm.y(), false, 1);
                 float y_offset = dm.y() - cam.y();
                 if(!flipped) {
                     dm.y(cam.y() - grid_height - y_offset + 48 + 48);
@@ -459,6 +463,10 @@ class script {
         if (dm.y_intent() == -1) {
             dm.y_intent(0);
         }
+        
+        // fix the skid state sprite
+        if(dm.state() == 4)
+            dm.state(0);
         
         // Alternate air physics 
         float y_speed = dm.y_speed();
@@ -534,13 +542,13 @@ class script {
         c.draw_rectangle(-805,455,-600,-455,0,0xFF000000);
         c.draw_rectangle(805,455,600,-455,0,0xFF000000);
         //THIS THIRD RECTANGLE JUST SO I CAN READ FPS
-        c.draw_rectangle(805,-350,350,-455,0,0xFF000000);
+        //c.draw_rectangle(805,-350,350,-455,0,0xFF000000);
         
         draw_particles();
         
         //TILE PATTERN STUFF
         int current_room = get_current_room();
-        room_tiles[current_room].draw(@c, @spr, respawn_x, respawn_y, flipped);
+        room_tiles[current_room].draw(@c, @spr, respawn_x, respawn_y, flipped, hide_sprites);
         
         //TEST STUFF
         //text_test.text(cam.x() + " - " + (cam.x() - (48 + cam_width / 2)) + " - " + particles_far[step_far].x);
@@ -608,8 +616,13 @@ class script {
             {'vdustworth', 0xFF60D470}
         };
         regular_color = uint32(charcolors[dm.character()]);
+
         fog.colour(18, 10, regular_color);
         fog.percent(18, 10, 1);
+        fog.colour(17, 10, 0xFF000000);
+        fog.percent(17, 10, 1);
+        fog.colour(15, 10, 0xFF000000);
+        fog.percent(15, 10, 1);
         cam.change_fog(@fog, 0);
 
         cam.script_camera(true);
@@ -715,18 +728,25 @@ class script {
     void build_rooms() {
         Room room;
         
-        room_tiles.resize(0);
+        array<Room> new_rooms(0);
         for(int gx = min_grid_x; gx <= max_grid_x; gx++) {
             for(int gy = min_grid_y + 1; gy <= max_grid_y; gy+=2) {
+                
                 room = Room();
+                for(uint i=0; i < room_tiles.length; i++) {
+                    if(room_tiles[i].y_coord == gy && room_tiles[i].x_coord == gx) {
+                        room = room_tiles[i];
+                    }
+                }
                 
                 room.set_grid_coords(gx, gy);
                 room.build_mirror();
                 room.detect_entities();
                 
-                room_tiles.insertLast(room);
+                new_rooms.insertLast(room);
             }
         }
+        room_tiles = new_rooms;
     }
 }
 
@@ -936,10 +956,7 @@ class Room {
         }
     }
     
-    void step(script@ s, camera@ cam, dustman@ dm, fog_setting@ fog, sprites@ spr, bool flipped) {
-        fog.colour(19, 10, body_rgb);
-        fog.percent(19, 10, 1);
-        cam.change_fog(@fog, 0);
+    void step(script@ s, dustman@ dm, sprites@ spr, bool flipped) {
         if (@dm != null && !s.dying) {
             for (uint i = 0; i < enemies.length(); i++) {
                 enemies[i].step(spr, dm, y_coord, flipped);
@@ -993,32 +1010,37 @@ class Room {
         }
     }
     
-    void enter() {
+    void enter(camera@ cam, fog_setting@ fog) {
         if(not tiles_generated) {
             detect_tiles();
             tiles_generated = true;
         }
+        
+        fog.colour(19, 10, body_rgb);
+        fog.percent(19, 10, 1);
+        fog.percent(19, 19, 0);
+        cam.change_fog(@fog, 0);
         
         for (uint i = 0; i < enemies.length(); i++) {
             enemies[i].reset();
         }
     }
     
-    void draw(canvas@ c, sprites@ spr, float respawn_x, float respawn_y, bool flipped) {
-        draw_tile_pattern(@spr, tiles, pattern, get_tile_rgb(), get_edge_rgb(), 19, flipped);
-        draw_tile_pattern(@spr, bg_tiles, bg_pattern, get_bg_tile_rgb(), get_bg_edge_rgb(), 15, flipped);
+    void draw(canvas@ c, sprites@ spr, float respawn_x, float respawn_y, bool flipped, bool hide_sprites) {
+        draw_tile_pattern(@spr, tiles, pattern, get_tile_rgb(), get_edge_rgb(), 19, flipped, hide_sprites);
+        draw_tile_pattern(@spr, bg_tiles, bg_pattern, get_bg_tile_rgb(), get_bg_edge_rgb(), 15, flipped, hide_sprites);
         draw_trigger_sprites(@spr, triggers, 18, respawn_x, respawn_y, flipped);
         draw_text_sprites(@c, @spr, name, flipped);
         draw_enemies(@spr, get_enemy_rgb(), flipped);
     }
     
-    void draw_tile_pattern(sprites@ spr, array<Pos> tiles, int pattern, uint32 c_pattern, uint32 c_edge, int layer, bool flipped) {
+    void draw_tile_pattern(sprites@ spr, array<Pos> tiles, int pattern, uint32 c_pattern, uint32 c_edge, int layer, bool flipped, bool hide_sprites) {
         //FIND TILE Y VALUE MIDWAY BETWEEN FLIPPED AND NONFLIPPED VERSIONS OF THE ROOM
         int room_ht = (cam_height + y_buffer) / 48;
         int midy = (y_coord * room_ht) - room_ht/2;
         for(uint i = 0; i < tiles.length; i++) {
             //PATTERN DRAWING
-            if (pattern != 0) {
+            if (!hide_sprites and pattern != 0) {
                 if (!flipped) {
                     spr.draw_world(layer, 19, "tile"+pattern, 0, 0, 48*tiles[i].x - 1, 48*tiles[i].y, 0, 0.50, 0.50, c_pattern);
                 } else {
@@ -1131,9 +1153,9 @@ class Room {
             int midy = (y_coord * room_ht) - room_ht/2;
             for(uint j = 0; j < textboxes[i].text.length(); j++) {
                 if (!flipped) {
-                    spr.draw_world(20, 20, textboxes[i].text.substr(j,1), 0, 0, textboxes[i].x + j*16, textboxes[i].y, 0, 0.25, 0.25, 0xFFFFFFFF);
+                    spr.draw_world(18, 0, textboxes[i].text.substr(j,1), 0, 0, textboxes[i].x + j*16, textboxes[i].y, 0, 0.25, 0.25, 0xFFFFFFFF);
                 } else {
-                    spr.draw_world(20, 20, textboxes[i].text.substr(j,1), 0, 0, textboxes[i].x + j*16, 2*midy - textboxes[i].y, 0, 0.25, -0.25, 0xFFFFFFFF);
+                    spr.draw_world(18, 0, textboxes[i].text.substr(j,1), 0, 0, textboxes[i].x + j*16, 2*midy - textboxes[i].y, 0, 0.25, -0.25, 0xFFFFFFFF);
                 }
             }
         }
