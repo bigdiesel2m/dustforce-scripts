@@ -4,6 +4,7 @@ class script {
 	scene@ g;
 	camera@ cam;
 	sprites@ spr;
+	tileinfo@ tile;
 
 	int cam_left;
 	int cam_right;
@@ -35,15 +36,18 @@ class script {
 		text_test.text("BOTTOM: " + cam_bottom);
 		text_test.draw_hud(0, 0, -790, -100, 1, 1, 0);
 
-		//draw_tiles(cam_left, cam_right, cam_top, cam_bottom);
-		spr.draw_world(19, 0, "0", 0, 0, (cam_left+5)*48, (cam_top+5)*48, 0, 0.5, 0.5, 0xFFFFFFFF);
-
+		draw_tiles(cam_left, cam_right, cam_top, cam_bottom);
 	}
 
 	void draw_tiles(int cam_left, int cam_right, int cam_top, int cam_bottom) {
 		for (int i = cam_left; i <= cam_right; i++) {
 			for (int j = cam_top; j <= cam_bottom; j++) {
-				//
+				@tile = g.get_tile(i, j, 19);
+				if (tile.solid()) {
+					if (tile.type() == 0) {
+						spr.draw_world(19, 0, "0", 0, 0, i*48, j*48, 0, 0.5, 0.5, 0xFFFFFFFF);
+					}
+				}
 			}
 		}
 	}
