@@ -11,10 +11,6 @@ class script {
 
 	sprites@ s;
 	hitbox@ hb;
-	varstruct@ vars;
-
-	int old_attack_state = 0;
-	string old_type_name;
 
 	entity@ old_e;
 
@@ -35,13 +31,15 @@ class script {
 	}
 
 	void entity_on_add(entity@ e) {
+		message@ meta = e.metadata();
+		if (meta.has_int("is_wavy")) return; // IF HITBOX IS PART OF THE WAVE, JUST SKIP IT
 		if (@old_e != null) {
-			//puts(e.type_name() + " - " + old_e.type_name());
+			// THIS DETECTS WHEN A PLAYER ATTACKS, AND GETS BOTH THE EFFECT ENTITY AND THE HITBOX ENTITY
 			if (old_e.type_name() == "hit_box_controller" && e.type_name() == "effect") {
-				puts("detected");
-				Wave w(e, copy_hitbox(old_e.as_hitbox()));
-				waves.insertLast(w);
-				puts("" + waves.length());
+				if (old_e.as_hitbox().owner().team() == 1) { // IF THIS IS A PLAYER ATTACK
+					Wave w(e, copy_hitbox(old_e.as_hitbox()));
+					waves.insertLast(w);
+				}
 			}
 		}
 		@old_e = e;
@@ -62,13 +60,6 @@ class script {
 			@hb = @players[0].hitbox();
 			go = true;
 		}
-
-		if (old_attack_state < players[0].attack_state()) {
-			//g.project_tile_filth(hb.x(), hb.y(), hb.base_rectangle().get_width(), hb.base_rectangle().get_height(), 4, hb.attack_dir(), 96, 0, true, true, true, true, false, true);
-			//g.project_tile_filth(hb.x(), hb.y(), 5, hb.base_rectangle().get_height(), 4, hb.attack_dir(), 480, 30, true, true, true, true, false, true);
-			
-		}
-		old_attack_state = players[0].attack_state();
 
 		//THIS STEPS EVERY EXISTING WAVE
 		for(uint i = 0; i < waves.length(); i++) {
@@ -112,8 +103,10 @@ class script {
 class Wave	{
 	entity@ e;
 	hitbox@ h;
-	int x;
-	int y;
+	hitbox@ h_old;
+	float x;
+	float y;
+	int timer = 0;
 
 	Wave(entity@ e, hitbox@ h) {
 		@this.e = e;
@@ -123,7 +116,31 @@ class Wave	{
 	}
 
 	void step(scene@ g) {
-		
+		if (timer < 20) {
+			x = x + 20;
+
+			//THIS SECTION CHECKS IF THE LAST HITBOX HIT SOMETHING
+			if (@h_old != null) {
+				puts("" + h_old.hit_outcome());
+			}
+
+			//THIS SECTION MOVES THE EFFECT ENTITY
+			e.x(x);
+
+			//THIS SECTION CREATES AND PLACES A NEW HITBOX
+			hitbox@ h_out = copy_hitbox(h); // CREATES A HITBOX COPY TO PLACE
+			message@ meta = h_out.metadata(); // GETS A HANDLE FOR THE COPY'S METADATA
+			meta.set_int("is_wavy", 1); // SETS A METADATA FLAG THAT THIS HITBOX IS PART OF THE WAVE
+			h_out.activate_time(0); // MAKES IT ACTIVE ON THE FIRST FRAME
+			h_out.x(x); // SET X TO ADJUSTED VALUE
+			h_out.y(y); // SET Y TO ADJUSTED VALUE
+			h_out.attack_ff_strength(0); //
+			g.add_entity(h_out.as_entity()); // PLACES COPY ONTO THE SCENE
+
+			//THIS SECTION INCREMENTS THE TIMER AND SAVES THIS HITBOX FOR FUTURE REFERENCE
+			@h_old = h_out;
+			timer++;
+		}
 	}
 	
 	Wave() {
