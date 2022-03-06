@@ -164,15 +164,32 @@ class Wave	{
 			h_out.y(h_old.y() + y_offset); // SET Y TO ADJUSTED VALUE
 			h_out.attack_ff_strength(0); // SETS FREEZE EFFECT TO ZERO
 			g.add_entity(h_out.as_entity()); // PLACES COPY ONTO THE SCENE
+			@h_old = h_out; // SAVES THE OLD HITBOX FOR FUTURE REFERENCE
 
-			// THIS SECTION SAVES THE OLD HITBOX FOR FUTURE REFERENCE
-			@h_old = h_out;
+			// THIS SECTION USES PROJECT_TILE_FILTH TO CLEAN FILTH OFF SURFACES
+			g.project_tile_filth(h_out.x(), h_out.y(), h_out.base_rectangle().get_width(), h_out.base_rectangle().get_height(), 0, h_out.attack_dir(), 200, 30, true, true, true, true, false, true);
 
-			// THIS SECTION CHECKS TO SEE IF THE HITBOX HIT ANYTHING AND STOPS IT IF SO
+			// THIS SECTION CHECKS TO SEE IF THE HITBOX HIT AN ENEMY AND STOPS IT IF SO
 			int col_int = g.get_entity_collision(h_out.y() + h_out.base_rectangle().top(), h_out.y() + h_out.base_rectangle().bottom(), h_out.x() + h_out.base_rectangle().left(), h_out.x() + h_out.base_rectangle().right(), 1);
 			if (col_int > 0) {
 				go = false;
 			}
+
+			// THIS SECTION CHECKS TO SEE IF THE HITBOX HIT A WALL AND STOPS IT IF SO
+			// SOME TRIG TO CREATE A "REASONABLE" RAYCAST THROUGHT THE CENTER OF THE HITBOX
+			float mid_x = (h_out.x() + (h_out.base_rectangle().left() + h_out.base_rectangle().right()) / 2);
+			float mid_y = (h_out.y() + (h_out.base_rectangle().top() + h_out.base_rectangle().bottom()) / 2);
+			float diag = sqrt((h_out.base_rectangle().get_width()*h_out.base_rectangle().get_width()) + (h_out.base_rectangle().get_height()*h_out.base_rectangle().get_height()));
+			const float pi = 3.141592653589;
+			float start_x = mid_x - sin(h_out.attack_dir() * pi / 180) * diag / 4;
+			float start_y = mid_y + cos(h_out.attack_dir() * pi / 180) * diag / 4;
+			float end_x = mid_x + sin(h_out.attack_dir() * pi / 180) * diag / 4;
+			float end_y = mid_y - cos(h_out.attack_dir() * pi / 180) * diag / 4;
+			raycast@ ray = g.ray_cast_tiles(start_x, start_y, end_x, end_y);
+			if (ray.hit()) {
+				go = false;
+			}
+			//puts(h_out.x() + " - " + start_x + " - " + end_x);
 
 			// THIS SECTION INCREMENTS THE TIMER AND STOPS THE HITBOX IF IT TIMES OUT
 			timer++;
