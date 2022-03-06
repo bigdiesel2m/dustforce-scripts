@@ -10,14 +10,14 @@ class script {
 
 	sprites@ s;
 	hitbox@ hb;
+	hitbox@ hb_new;
 	rectangle@ rect;
 
 	//TESTING STUFF
 	bool go = false;
 	textfield@ text_test;
 	string test_string;
-
-	float old_state_timer;
+    int test_int = 0;
 
 	script() {
 		@g = get_scene();
@@ -26,31 +26,29 @@ class script {
 		text_test.align_horizontal(-1);
 		text_test.align_vertical(1);
 	}
+
+    void entity_on_add(entity@ e) {
+        if (e.type_name() == "hit_box_controller") {
+            @hb = e.as_hitbox();
+            @hb_new = create_hitbox(hb.owner(), 0, hb.x(), hb.y(), hb.base_rectangle().top(), hb.base_rectangle().bottom(), hb.base_rectangle().left(), hb.base_rectangle().right());
+            go = true;
+            puts(e.type_name());
+            test_int++;
+        }
+    }
 	
     void step(int entities) {
-		if (@players[0].hitbox() != null) {
-			@hb = players[0].hitbox();
-			go = true;
-		}
-
-		// if (go) {
-		// 	if (hb.state_timer() > old_state_timer) {
-		// 		test_string = "INCREMENTING";
-		// 		hb.x(hb.x() + 10);
-		// 	} else {
-		// 		test_string = "STOPPED";
-		// 	}
-
-		// 	old_state_timer = hb.state_timer();
-		// }
-
+        if (go) {
+            g.add_entity(hb_new.as_entity());
+        }
 	}
 	
     void draw(float subframe) {
 		//TEST
 		if (go) {
 			//text_test.text(old_state_timer + " - " + hb.state_timer() + " - " + test_string);
-			text_test.text(hb.y() + " - " + hb.base_rectangle().bottom() + " - " + hb.base_rectangle().top());
+			//text_test.text(hb.y() + " - " + hb.base_rectangle().bottom() + " - " + hb.base_rectangle().top());
+			text_test.text(test_int + " - " + hb.base_rectangle().bottom() + " - " + hb.base_rectangle().top());
 			c.draw_text(text_test, 0, 250, 1, 1, 0);
 		}
 
