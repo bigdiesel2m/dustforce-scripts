@@ -73,7 +73,8 @@ class script {
 			//text_test.text(old_state_timer + " - " + hb.state_timer() + " - " + test_string);
 			//text_test.text(hb.y() + " - " + hb.base_rectangle().bottom() + " - " + hb.base_rectangle().top());
 			//text_test.text(hb.state_timer() + " - " + hb.activate_time() + " - " + hb.triggered());
-			text_test.text(players[0].attack_state() + " - " + hb.x() + " - " + hb.y() + " - " + hb.base_rectangle().bottom() + " - " + hb.base_rectangle().top());
+			//text_test.text(players[0].attack_state() + " - " + hb.x() + " - " + hb.y() + " - " + hb.base_rectangle().bottom() + " - " + hb.base_rectangle().top());
+			text_test.text(hb.attack_dir() + "");
 			c.draw_text(text_test, 0, 250, 1, 1, 0);
 		}
 
@@ -104,42 +105,80 @@ class Wave	{
 	entity@ e;
 	hitbox@ h;
 	hitbox@ h_old;
-	float x;
-	float y;
+	float x_offset = 0;
+	float y_offset = 0;
+	float speed = 35;
 	int timer = 0;
+	bool go = true;
 
 	Wave(entity@ e, hitbox@ h) {
 		@this.e = e;
 		@this.h = h;
-		this.x = h.x();
-		this.y = h.y();
+		@this.h_old = h;
 	}
 
 	void step(scene@ g) {
-		if (timer < 20) {
-			x = x + 20;
-
-			//THIS SECTION CHECKS IF THE LAST HITBOX HIT SOMETHING
-			if (@h_old != null) {
-				puts("" + h_old.hit_outcome());
+		if (go) {
+			speed = speed - 1.5;
+			//THIS SWITCH DEFINES THE ANGLES THE WAVES TRAVEL AT
+			switch (h.attack_dir()) {
+				case 30:
+					x_offset = speed * 0.5;
+					y_offset = speed * -sqrt(3) / 2;
+					break;
+				case 85:
+					x_offset = speed;
+					y_offset = 0;
+					break;
+				case 150:
+				case 151:
+					x_offset = speed * 0.5;
+					y_offset = speed * sqrt(3) / 2;
+					break;
+				case -30:
+					x_offset = speed * -0.5;
+					y_offset = speed * -sqrt(3) / 2;
+					break;
+				case -85:
+					x_offset = -speed;
+					y_offset = 0;
+					break;
+				case -150:
+				case -151:
+					x_offset = speed * -0.5;
+					y_offset = speed * sqrt(3) / 2;
+					break;
 			}
 
-			//THIS SECTION MOVES THE EFFECT ENTITY
-			e.x(x);
+			// THIS SECTION MOVES THE EFFECT ENTITY
+			e.x(e.x() + x_offset);
+			e.y(e.y() + y_offset);
+			e.time_warp(0.5);
 
-			//THIS SECTION CREATES AND PLACES A NEW HITBOX
+			// THIS SECTION CREATES AND PLACES A NEW HITBOX
 			hitbox@ h_out = copy_hitbox(h); // CREATES A HITBOX COPY TO PLACE
 			message@ meta = h_out.metadata(); // GETS A HANDLE FOR THE COPY'S METADATA
 			meta.set_int("is_wavy", 1); // SETS A METADATA FLAG THAT THIS HITBOX IS PART OF THE WAVE
 			h_out.activate_time(0); // MAKES IT ACTIVE ON THE FIRST FRAME
-			h_out.x(x); // SET X TO ADJUSTED VALUE
-			h_out.y(y); // SET Y TO ADJUSTED VALUE
-			h_out.attack_ff_strength(0); //
+			h_out.x(h_old.x() + x_offset); // SET X TO ADJUSTED VALUE
+			h_out.y(h_old.y() + y_offset); // SET Y TO ADJUSTED VALUE
+			h_out.attack_ff_strength(0); // SETS FREEZE EFFECT TO ZERO
 			g.add_entity(h_out.as_entity()); // PLACES COPY ONTO THE SCENE
 
-			//THIS SECTION INCREMENTS THE TIMER AND SAVES THIS HITBOX FOR FUTURE REFERENCE
+			// THIS SECTION SAVES THE OLD HITBOX FOR FUTURE REFERENCE
 			@h_old = h_out;
+
+			// THIS SECTION CHECKS TO SEE IF THE HITBOX HIT ANYTHING AND STOPS IT IF SO
+			int col_int = g.get_entity_collision(h_out.y() + h_out.base_rectangle().top(), h_out.y() + h_out.base_rectangle().bottom(), h_out.x() + h_out.base_rectangle().left(), h_out.x() + h_out.base_rectangle().right(), 1);
+			if (col_int > 0) {
+				go = false;
+			}
+
+			// THIS SECTION INCREMENTS THE TIMER AND STOPS THE HITBOX IF IT TIMES OUT
 			timer++;
+			if (timer > 20) { 
+				go = false;
+			}
 		}
 	}
 	
@@ -148,7 +187,7 @@ class Wave	{
 	}
 }
 
-//THIS COPIES THE PROPERTIES OF ONE HITBOX TO ANOTHER (I HOPE)
+//THIS COPIES THE PROPERTIES OF ONE HITBOX TO ANOTHER
 hitbox@ copy_hitbox(hitbox@ hb) {
 	hitbox@ hb_new;
 	
