@@ -1,5 +1,6 @@
 /* 
 Simple fake prop script made during DLC 2.
+http://atlas.dustforce.com/11114/tire-museum
 Use C's sprite reference info for sprite info:
 https://github.com/cmann1/PropUtils/tree/master/files/sprite_reference
 */
@@ -10,8 +11,8 @@ class script {
 }
 
 class ExtraProp : trigger_base {
-	[text|tooltip:"Use C's sprite reference info for sprite sets"] string sprite_set = "trash_tire";
-	[text|tooltip:"Use C's sprite reference info for sprite names"] string sprite_name = "idle";
+	[text] string sprite_set = "trash_tire";
+	[text] string sprite_name = "idle";
 	[text] uint32 frame = 0;
 	[text] uint32 palette = 0;
 	[text] int layer = 15;
