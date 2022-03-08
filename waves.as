@@ -1,26 +1,17 @@
 /* 
-TEST SCRIPT
+"Waves" script made for CMJ 3, which I used in my map "Hollow Elegy".
+Thank you to Skyhawk, C, and AvengedRuler for help making the script.
+http://atlas.dustforce.com/11175/hollow-elegy
 */
 
 class script {
 	scene@ g;
-	canvas@ c;
-
-	array <dustman@> players(4, null);
 	array <Wave> waves;
 
 	sprites@ s;
-	hitbox@ hb;
+	entity@ last_hb;
 
-	entity@ old_e;
-
-
-	//TESTING STUFF
-	bool go = false;
 	textfield@ text_test;
-	string test_string;
-	int test_int = 0;
-	entity@ test_ent;
 
 	script() {
 		@g = get_scene();
@@ -33,69 +24,26 @@ class script {
 	void entity_on_add(entity@ e) {
 		message@ meta = e.metadata();
 		if (meta.has_int("is_wavy")) return; // IF HITBOX IS PART OF THE WAVE, JUST SKIP IT
-		if (@old_e != null) {
-			// THIS DETECTS WHEN A PLAYER ATTACKS, AND GETS BOTH THE EFFECT ENTITY AND THE HITBOX ENTITY
-			if (old_e.type_name() == "hit_box_controller" && e.type_name() == "effect") {
-				if (old_e.as_hitbox().owner().team() == 1) { // IF THIS IS A PLAYER ATTACK
-					Wave w(e, copy_hitbox(old_e.as_hitbox()));
-					waves.insertLast(w);
-				}
+
+		// IF WE HAVE A HITBOX TO COMPARE TO AND WE SEE A NEW EFFECT
+		if (@last_hb != null && e.type_name() == "effect") { 
+			// AND IF THEY'RE CLOSE(ISH) TO EACH OTHER
+			if (abs(last_hb.as_hitbox().x() - e.x()) < 150 && abs(last_hb.as_hitbox().y() - e.y()) < 250) {
+				Wave w(e, copy_hitbox(last_hb.as_hitbox()));
+				waves.insertLast(w);
+				@last_hb = null;
 			}
 		}
-		@old_e = e;
+		// IF E IS A HITBOX AND FROM A PLAYER THEN SAVE IT
+		if (e.type_name() == "hit_box_controller" && e.as_hitbox().owner().team() == 1) {
+			@last_hb = e;
+		}
 	}
-
-	// void entity_on_add(entity@ e) {
-	// 	if (e.type_name() == "hit_box_controller") {
-	// 		@hb = e.as_hitbox();
-	// 		@hb_new = create_hitbox(hb.owner(), 0, hb.x(), hb.y(), hb.base_rectangle().top(), hb.base_rectangle().bottom(), hb.base_rectangle().left(), hb.base_rectangle().right());
-	// 		go = true;
-	// 		puts(e.type_name());
-	// 		test_int++;
-	// 	}
-	// }
 	
 	void step(int entities) {
-		if (@players[0].hitbox() != null) {
-			@hb = @players[0].hitbox();
-			go = true;
-		}
-
 		//THIS STEPS EVERY EXISTING WAVE
 		for(uint i = 0; i < waves.length(); i++) {
 			waves[i].step(@g);
-		}
-	}
-	
-	void draw(float subframe) {
-		//TEST
-		if (go) {
-			//text_test.text(old_state_timer + " - " + hb.state_timer() + " - " + test_string);
-			//text_test.text(hb.y() + " - " + hb.base_rectangle().bottom() + " - " + hb.base_rectangle().top());
-			//text_test.text(hb.state_timer() + " - " + hb.activate_time() + " - " + hb.triggered());
-			//text_test.text(players[0].attack_state() + " - " + hb.x() + " - " + hb.y() + " - " + hb.base_rectangle().bottom() + " - " + hb.base_rectangle().top());
-			text_test.text(hb.attack_dir() + "");
-			c.draw_text(text_test, 0, 250, 1, 1, 0);
-		}
-
-	}
-	
-	void on_level_start() {
-		initialize();
-	}
-	
-	void checkpoint_load() {
-		initialize();
-	}
-	
-	void initialize() {
-		@c = create_canvas(true, 0, 0);
-
-		//CREATE ARRAY OF PLAYERS
-		for(uint i=0; i < players.length(); i++) {
-			if (@controller_controllable(i) != null) {
-				@players[i] = controller_controllable(i).as_dustman();
-			}
 		}
 	}
 }
@@ -119,7 +67,7 @@ class Wave	{
 
 	void step(scene@ g) {
 		if (go) {
-			speed = speed - 1.5;
+			speed = speed - 1.4;
 			//THIS SWITCH DEFINES THE ANGLES THE WAVES TRAVEL AT
 			switch (h.attack_dir()) {
 				case 30:
@@ -189,7 +137,6 @@ class Wave	{
 			if (ray.hit()) {
 				go = false;
 			}
-			//puts(h_out.x() + " - " + start_x + " - " + end_x);
 
 			// THIS SECTION INCREMENTS THE TIMER AND STOPS THE HITBOX IF IT TIMES OUT
 			timer++;
