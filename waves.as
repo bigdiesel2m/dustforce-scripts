@@ -121,24 +121,20 @@ class Wave	{
 			// THIS SECTION USES PROJECT_TILE_FILTH TO CLEAN FILTH OFF SURFACES
 			g.project_tile_filth(h_out.x(), h_out.y(), h_out.base_rectangle().get_width(), h_out.base_rectangle().get_height(), 0, h_out.attack_dir(), 200, 30, true, true, true, true, false, true);
 
-			// THIS SECTION CHECKS TO SEE IF THE HITBOX HIT AN ENEMY AND STOPS IT IF SO
+			// THIS SECTION CHECKS TO SEE IF THE HITBOX COLLIDES WITH AN ENEMY AND STOPS IT IF SO
 			int col_int = g.get_entity_collision(h_out.y() + h_out.base_rectangle().top(), h_out.y() + h_out.base_rectangle().bottom(), h_out.x() + h_out.base_rectangle().left(), h_out.x() + h_out.base_rectangle().right(), 1);
 			for(int i = 0; i < col_int; i++) { // IF WE HIT AN "ENEMY"
 				entity@ hit_ent = g.get_entity_collision_index(i); // GET THAT ENTITY'S HANDLE
-				// TRY TO CAST THAT ENTITY AS A CONTROLLABLE, AND THEN CHECK IF IT'S ON "TEAM FILTH"
-				if (@hit_ent != null && @hit_ent.as_controllable() != null && hit_ent.as_controllable().team() == 0) {
-					// IF SO, PLAY A HIT SOUND AND STOP THE WAVE
-					switch (h_out.damage()) {
-						case 1:
-							g.play_sound("sfx_impact_light_" + sound, hit_ent.x(), hit_ent.y(), 1, false, true);
-							break;
-						case 3:
-							g.play_sound("sfx_impact_heavy_" + sound, hit_ent.x(), hit_ent.y(), 1, false, true);
-							break;
-					}
-					go = false;
-					break;
-				}
+				if (@hit_ent == null) continue; // STOP IF ENTITY IS NULL
+				controllable@ hit_con = @hit_ent.as_controllable(); // CAST ENTITY TO CONTROLLABLE
+				if (@hit_con == null) continue; // STOP IF CONTROLLABLE IS NULL
+				if (hit_con.team() != 0) continue; // STOP IF ENTITY ISN'T ON "TEAM FILTH"
+
+				string type = h_out.damage() == 1 ? "light" : "heavy"; // DETECTS ATTACK TYPE (THANKS C <3)
+				g.play_sound("sfx_impact_" + type + "_" + sound, hit_ent.x(), hit_ent.y(), 1, false, true);
+				
+				go = false; 
+				break;
 			}
 
 			// THIS SECTION CHECKS TO SEE IF THE HITBOX HIT A WALL AND STOPS IT IF SO
