@@ -10,6 +10,7 @@ class script {
 
 	sprites@ s;
 	entity@ last_hb;
+	int sound = 1;
 
 	textfield@ text_test;
 
@@ -29,7 +30,8 @@ class script {
 		if (@last_hb != null && e.type_name() == "effect") { 
 			// AND IF THEY'RE CLOSE(ISH) TO EACH OTHER
 			if (abs(last_hb.as_hitbox().x() - e.x()) < 150 && abs(last_hb.as_hitbox().y() - e.y()) < 250) {
-				Wave w(e, copy_hitbox(last_hb.as_hitbox()));
+				sound = 1 + (sound + rand() % 2) % 3; // RANDOMIZES SOUND THE ATTACK PLAYS IF IT HITS AN ENEMY
+				Wave w(e, copy_hitbox(last_hb.as_hitbox()), sound);
 				waves.insertLast(w);
 				@last_hb = null;
 			}
@@ -57,12 +59,14 @@ class Wave	{
 	float y_offset = 0;
 	float speed = 35;
 	int timer = 0;
+	int sound = 1 + rand() % 3;
 	bool go = true;
 
-	Wave(entity@ e, hitbox@ h) {
+	Wave(entity@ e, hitbox@ h, int sound) {
 		@this.e = e;
 		@this.h = h;
 		@this.h_old = h;
+		this.sound = sound;
 	}
 
 	void step(scene@ g) {
@@ -119,8 +123,22 @@ class Wave	{
 
 			// THIS SECTION CHECKS TO SEE IF THE HITBOX HIT AN ENEMY AND STOPS IT IF SO
 			int col_int = g.get_entity_collision(h_out.y() + h_out.base_rectangle().top(), h_out.y() + h_out.base_rectangle().bottom(), h_out.x() + h_out.base_rectangle().left(), h_out.x() + h_out.base_rectangle().right(), 1);
-			if (col_int > 0) {
-				go = false;
+			for(int i = 0; i < col_int; i++) { // IF WE HIT AN "ENEMY"
+				entity@ hit_ent = g.get_entity_collision_index(i); // GET THAT ENTITY'S HANDLE
+				// TRY TO CAST THAT ENTITY AS A CONTROLLABLE, AND THEN CHECK IF IT'S ON "TEAM FILTH"
+				if (@hit_ent != null && @hit_ent.as_controllable() != null && hit_ent.as_controllable().team() == 0) {
+					// IF SO, PLAY A HIT SOUND AND STOP THE WAVE
+					switch (h_out.damage()) {
+						case 1:
+							g.play_sound("sfx_impact_light_" + sound, hit_ent.x(), hit_ent.y(), 1, false, true);
+							break;
+						case 3:
+							g.play_sound("sfx_impact_heavy_" + sound, hit_ent.x(), hit_ent.y(), 1, false, true);
+							break;
+					}
+					go = false;
+					break;
+				}
 			}
 
 			// THIS SECTION CHECKS TO SEE IF THE HITBOX HIT A WALL AND STOPS IT IF SO
