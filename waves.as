@@ -4,22 +4,16 @@ Thank you to Skyhawk, C, and AvengedRuler for help making the script.
 http://atlas.dustforce.com/11175/hollow-elegy
 */
 
-class script {
+class script : callback_base {
 	scene@ g;
 	array <Wave> waves;
 
-	sprites@ s;
 	entity@ last_hb;
 	int sound = 1;
-
-	textfield@ text_test;
+	dustman@ dm;
 
 	script() {
 		@g = get_scene();
-
-		@text_test = @create_textfield();
-		text_test.align_horizontal(-1);
-		text_test.align_vertical(1);
 	}
 
 	void entity_on_add(entity@ e) {
@@ -48,6 +42,24 @@ class script {
 			waves[i].step(@g);
 		}
 	}
+/*
+	void on_level_start() {
+		initialize();
+	}
+
+	void checkpoint_load() {
+		initialize();
+	}
+	
+	void initialize() {
+		@dm = controller_controllable(0).as_dustman();
+		if (@dm != null) dm.on_subframe_end_callback(this, "substep", 0);
+	}
+
+	void substep(dustman@ dm, int arg) {
+		//
+	}
+*/
 }
 
 
