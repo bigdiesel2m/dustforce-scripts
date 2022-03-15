@@ -4,13 +4,12 @@ Thank you to Skyhawk, C, and AvengedRuler for help making the script.
 http://atlas.dustforce.com/11175/hollow-elegy
 */
 
-class script : callback_base {
+class script {
 	scene@ g;
 	array <Wave> waves;
 
-	entity@ last_hb;
+	hitbox@ last_hb;
 	int sound = 1;
-	dustman@ dm;
 
 	script() {
 		@g = get_scene();
@@ -21,18 +20,19 @@ class script : callback_base {
 		if (meta.has_int("is_wavy")) return; // IF HITBOX IS PART OF THE WAVE, JUST SKIP IT
 
 		// IF WE HAVE A HITBOX TO COMPARE TO AND WE SEE A NEW EFFECT
-		if (@last_hb != null && e.type_name() == "effect") { 
-			// AND IF THEY'RE CLOSE(ISH) TO EACH OTHER
-			if (abs(last_hb.as_hitbox().x() - e.x()) < 150 && abs(last_hb.as_hitbox().y() - e.y()) < 250) {
+		if (@last_hb != null && e.type_name() == "effect") {
+			effect@ fx = e.as_effect();
+			string spr = fx.sprite_index();
+			if (spr.findFirst('heavy') > -1 || spr.findFirst('strike') > -1) {
 				sound = 1 + (sound + rand() % 2) % 3; // RANDOMIZES SOUND THE ATTACK PLAYS IF IT HITS AN ENEMY
-				Wave w(e, copy_hitbox(last_hb.as_hitbox()), sound);
+				Wave w(@fx, @last_hb, @fx.freeze_target().as_dustman(), sound);
 				waves.insertLast(w);
 				@last_hb = null;
 			}
 		}
 		// IF E IS A HITBOX AND FROM A PLAYER THEN SAVE IT
 		if (e.type_name() == "hit_box_controller" && e.as_hitbox().owner().team() == 1) {
-			@last_hb = e;
+			@last_hb = e.as_hitbox();
 		}
 	}
 	
@@ -42,42 +42,26 @@ class script : callback_base {
 			waves[i].step(@g);
 		}
 	}
-/*
-	void on_level_start() {
-		initialize();
-	}
-
-	void checkpoint_load() {
-		initialize();
-	}
-	
-	void initialize() {
-		@dm = controller_controllable(0).as_dustman();
-		if (@dm != null) dm.on_subframe_end_callback(this, "substep", 0);
-	}
-
-	void substep(dustman@ dm, int arg) {
-		//
-	}
-*/
 }
 
 
 class Wave	{
-	entity@ e;
+	effect@ fx;
 	hitbox@ h;
 	hitbox@ h_old;
+	dustman@ dm;
+	int sound;
+	
 	float x_offset = 0;
 	float y_offset = 0;
 	float speed = 35;
 	int timer = 0;
-	int sound = 1 + rand() % 3;
 	bool go = true;
 
-	Wave(entity@ e, hitbox@ h, int sound) {
-		@this.e = e;
-		@this.h = h;
-		@this.h_old = h;
+	Wave(effect@ fx, hitbox@ h, dustman@ dm, int sound) {
+		@this.fx = fx;
+		@this.h = @this.h_old = h;
+		@this.dm = dm;
 		this.sound = sound;
 	}
 
@@ -115,9 +99,9 @@ class Wave	{
 			}
 
 			// THIS SECTION MOVES THE EFFECT ENTITY
-			e.x(e.x() + x_offset);
-			e.y(e.y() + y_offset);
-			e.time_warp(0.5);
+			fx.x(fx.x() + x_offset);
+			fx.y(fx.y() + y_offset);
+			fx.time_warp(0.5);
 
 			// THIS SECTION CREATES AND PLACES A NEW HITBOX
 			hitbox@ h_out = copy_hitbox(h); // CREATES A HITBOX COPY TO PLACE
