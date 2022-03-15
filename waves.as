@@ -7,8 +7,7 @@ http://atlas.dustforce.com/11175/hollow-elegy
 class script {
 	scene@ g;
 	array <Wave> waves;
-
-	hitbox@ last_hb;
+	array <hitbox@> hitboxes;
 	int sound = 1;
 
 	script() {
@@ -17,22 +16,27 @@ class script {
 
 	void entity_on_add(entity@ e) {
 		message@ meta = e.metadata();
-		if (meta.has_int("is_wavy")) return; // IF HITBOX IS PART OF THE WAVE, JUST SKIP IT
+		if (meta.has_int("is_wavy")) return; // IF ENTITY IS PART OF THE WAVE, JUST SKIP IT
 
-		// IF WE HAVE A HITBOX TO COMPARE TO AND WE SEE A NEW EFFECT
-		if (@last_hb != null && e.type_name() == "effect") {
+		if (e.type_name() == "effect") {
 			effect@ fx = e.as_effect();
 			string spr = fx.sprite_index();
 			if (spr.findFirst('heavy') > -1 || spr.findFirst('strike') > -1) {
-				sound = 1 + (sound + rand() % 2) % 3; // RANDOMIZES SOUND THE ATTACK PLAYS IF IT HITS AN ENEMY
-				Wave w(@fx, @last_hb, @fx.freeze_target().as_dustman(), sound);
-				waves.insertLast(w);
-				@last_hb = null;
+				for(uint i = 0; i < hitboxes.length(); i++) {
+					if (hitboxes[i].owner().is_same(@fx.freeze_target().as_dustman())) {
+						// RANDOMIZES SOUND THE ATTACK PLAYS IF IT HITS AN ENEMY
+						sound = 1 + (sound + rand() % 2) % 3;
+						Wave w(@fx, hitboxes[i], @fx.freeze_target().as_dustman(), sound);
+						waves.insertLast(w);
+						hitboxes.removeAt(i);
+					}
+				}
 			}
 		}
+
 		// IF E IS A HITBOX AND FROM A PLAYER THEN SAVE IT
 		if (e.type_name() == "hit_box_controller" && e.as_hitbox().owner().team() == 1) {
-			@last_hb = e.as_hitbox();
+			hitboxes.insertLast(e.as_hitbox());
 		}
 	}
 	
