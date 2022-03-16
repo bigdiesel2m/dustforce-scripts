@@ -22,13 +22,20 @@ class script {
 			effect@ fx = e.as_effect();
 			string spr = fx.sprite_index();
 			if (spr.findFirst('heavy') > -1 || spr.findFirst('strike') > -1) {
-				for(uint i = 0; i < hitboxes.length(); i++) {
-					if (hitboxes[i].owner().is_same(@fx.freeze_target().as_dustman())) {
-						// RANDOMIZES SOUND THE ATTACK PLAYS IF IT HITS AN ENEMY
-						sound = 1 + (sound + rand() % 2) % 3;
-						Wave w(@fx, hitboxes[i], @fx.freeze_target().as_dustman(), sound);
-						waves.insertLast(w);
+				for(int i = int(hitboxes.length()) - 1; i >= 0; i--) { // SO HERE WE ITERATE BACKWARDS THROUGH ALL THE HITBOXES IN OUR ARRAY
+					if (hitboxes[i].owner().is_same(@fx.freeze_target().as_dustman())) { // ONLY CHECK IF HITBOX AND EFFECT HAVE SAME OWNER
+						if(hitboxes[i].hit_outcome() == 2 && hitboxes[i].state_timer() < hitboxes[i].activate_time() + 1) {
+							// RANDOMIZES SOUND THE ATTACK PLAYS IF IT HITS AN ENEMY
+							sound = 1 + (sound + rand() % 2) % 3;
+							Wave w(@fx, hitboxes[i], @fx.freeze_target().as_dustman(), sound);
+							waves.insertLast(w);
+						} else {
+							puts("outcome or time mismatch");
+							puts(hitboxes[i].hit_outcome() + " - " + hitboxes[i].state_timer() + " - " + hitboxes[i].activate_time());
+						}
 						hitboxes.removeAt(i);
+					} else {
+						puts("owner mismatch");
 					}
 				}
 			}
