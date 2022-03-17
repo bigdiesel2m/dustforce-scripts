@@ -37,15 +37,15 @@ class script : callback_base {
 		}
 
 		// IF E IS A HITBOX AND FROM A PLAYER THEN SAVE IT
-		if (e.type_name() == "hit_box_controller" && e.as_hitbox().owner().team() == 1) {
+		if (@e.as_hitbox() != null && @e.as_hitbox().owner() != null && e.as_hitbox().owner().team() == 1) {
 			hitboxes.insertLast(e.as_hitbox());
 		}
 	}
 	
-	void step(int entities) {
+	void step_post(int entities) {
 		//THIS STEPS EVERY EXISTING WAVE
 		for(uint i = 0; i < waves.length(); i++) {
-			waves[i].step(@g);
+			waves[i].step_post(@g);
 		}
 	}
 
@@ -87,6 +87,9 @@ class Wave	{
 	float speed = 35;
 	int timer = 0;
 	bool go = true;
+	bool done = false;
+	array <Ref> refs;
+	int combo = 0;
 
 	Wave(effect@ fx, hitbox@ h, dustman@ dm, int sound) {
 		@this.fx = fx;
@@ -95,7 +98,8 @@ class Wave	{
 		this.sound = sound;
 	}
 
-	void step(scene@ g) {
+	void step_post(scene@ g) {
+		if (done) return;
 		if (go) {
 			speed = speed - 1.4;
 			//THIS SWITCH DEFINES THE ANGLES THE WAVES TRAVEL AT
@@ -137,7 +141,8 @@ class Wave	{
 			hitbox@ h_out = copy_hitbox(h); // CREATES A HITBOX COPY TO PLACE
 			message@ meta = h_out.metadata(); // GETS A HANDLE FOR THE COPY'S METADATA
 			meta.set_int("is_wavy", 1); // SETS A METADATA FLAG THAT THIS HITBOX IS PART OF THE WAVE
-			h_out.activate_time(0); // MAKES IT ACTIVE ON THE FIRST FRAME
+			h_out.activate_time(0); // MAKES IT ACTIVE ON THE FIRST FRAME POSSIBLE
+			h_out.timer_speed(300); // CRANKS TIMER SPEED TO QUICKLY CULL HITBOXES AFTER ACTIVATION
 			h_out.x(h_old.x() + x_offset); // SET X TO ADJUSTED VALUE
 			h_out.y(h_old.y() + y_offset); // SET Y TO ADJUSTED VALUE
 			h_out.attack_ff_strength(0); // SETS FREEZE EFFECT TO ZERO
@@ -148,8 +153,8 @@ class Wave	{
 			g.project_tile_filth(h_out.x(), h_out.y(), h_out.base_rectangle().get_width(), h_out.base_rectangle().get_height(), 0, h_out.attack_dir(), 200, 30, true, true, true, true, false, true);
 
 			// THIS SECTION CHECKS TO SEE IF THE HITBOX COLLIDES WITH AN ENEMY AND STOPS IT IF SO
-			int col_int = g.get_entity_collision(h_out.y() + h_out.base_rectangle().top(), h_out.y() + h_out.base_rectangle().bottom(), h_out.x() + h_out.base_rectangle().left(), h_out.x() + h_out.base_rectangle().right(), 1);
-			for(int i = 0; i < col_int; i++) { // IF WE HIT AN "ENEMY"
+			int col_int = g.get_entity_collision(h_out.y() + h_out.base_rectangle().top(), h_out.y() + h_out.base_rectangle().bottom(), h_out.x() + h_out.base_rectangle().left(), h_out.x() + h_out.base_rectangle().right(), 7);
+			for(int i = 0; i < col_int; i++) { // IF WE HIT A "HITTABLE"
 				entity@ hit_ent = g.get_entity_collision_index(i); // GET THAT ENTITY'S HANDLE
 				if (@hit_ent == null) continue; // STOP IF ENTITY IS NULL
 				controllable@ hit_con = @hit_ent.as_controllable(); // CAST ENTITY TO CONTROLLABLE
@@ -159,8 +164,10 @@ class Wave	{
 				string type = h_out.damage() == 1 ? "light" : "heavy"; // DETECTS ATTACK TYPE (THANKS C <3)
 				g.play_sound("sfx_impact_" + type + "_" + sound, hit_ent.x(), hit_ent.y(), 1, false, true);
 				
-				go = false; 
-				break;
+				// THIS SAVES INFO ABOUT THE HIT FOR FUTURE REFERENCE
+				Ref r(@hit_con, @h_out, h_out.damage(), hit_con.life());
+				refs.insertLast(r);
+				go = false;
 			}
 
 			// THIS SECTION CHECKS TO SEE IF THE HITBOX HIT A WALL AND STOPS IT IF SO
@@ -183,10 +190,53 @@ class Wave	{
 			if (timer > 20) { 
 				go = false;
 			}
+		} else if (!go) { // ONCE THE WAVE HAS STOPPED, WE LOOK AT ENTITIES IT HIT TO ALLOCATE COMBO
+			for(uint i = 0; i < refs.length(); i++) {
+				if (refs[i].h.hit_outcome() == 1) { // IN THE CASE OF A HIT
+					if (refs[i].c.as_entity().type_name() == "enemy_tutorial_hexagon") {
+						combo = 3; // A SUCCESSFUL HIT ON A BIG PRISM ALWAYS GIVES 3 COMBO
+					} else if (refs[i].c.as_entity().type_name() == "enemy_spring_ball") {
+						if (refs[i].life == refs[i].c.life()) { // IF THE HIT DIDN'T HURT THE SPRINGBLOB
+							combo = refs[i].damage; // GIVE COMBO FOR FULL DAMAGE
+						} else { // OTHERWISE NORMAL COMBO MATH APPLIES
+							combo = refs[i].life > refs[i].damage ? refs[i].damage: refs[i].life;
+						}
+					} else {
+						combo = refs[i].life > refs[i].damage ? refs[i].damage: refs[i].life;
+					}
+					puts("Hit +" + combo + " (" + refs[i].c.as_entity().type_name() + ")");
+				} else if (refs[i].h.hit_outcome() == 3) { // IN THE CASE OF A PARRY
+					combo = 2*refs[i].damage; // PARRY RETURNS TWICE THE DAMAGE AS COMBO
+					puts("Parry +" + combo);
+				} else {
+					puts("Unexpected hit outcome: " + refs[i].h.hit_outcome());
+				}
+				dm.combo_count(dm.combo_count() + combo);
+				dm.combo_timer(1);
+			}
+			done = true;
 		}
 	}
 	
 	Wave() {
+		//
+	}
+}
+
+class Ref {
+	controllable@ c;
+	hitbox@ h;
+	int damage;
+	int life;
+
+	Ref(controllable@ c, hitbox@ h, int damage, int life) {
+		@this.c = c;
+		@this.h = h;
+		this.damage = damage;
+		this.life = life;
+	}
+	
+	Ref() {
 		//
 	}
 }
