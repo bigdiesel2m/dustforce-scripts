@@ -157,15 +157,15 @@ class Wave	{
 			for(int i = 0; i < col_int; i++) { // IF WE HIT A "HITTABLE"
 				entity@ hit_ent = g.get_entity_collision_index(i); // GET THAT ENTITY'S HANDLE
 				if (@hit_ent == null) continue; // STOP IF ENTITY IS NULL
-				controllable@ hit_con = @hit_ent.as_controllable(); // CAST ENTITY TO CONTROLLABLE
-				if (@hit_con == null) continue; // STOP IF CONTROLLABLE IS NULL
-				if (hit_con.team() != 0) continue; // STOP IF ENTITY ISN'T ON "TEAM FILTH"
+				hittable@ hit_hit = @hit_ent.as_hittable(); // CAST ENTITY TO HITTABLE
+				if (@hit_hit == null) continue; // STOP IF HITTABLE IS NULL
+				if (hit_hit.team() != 0) continue; // STOP IF HITTABLE ISN'T ON "TEAM FILTH"
 
 				string type = h_out.damage() == 1 ? "light" : "heavy"; // DETECTS ATTACK TYPE (THANKS C <3)
 				g.play_sound("sfx_impact_" + type + "_" + sound, hit_ent.x(), hit_ent.y(), 1, false, true);
 				
 				// THIS SAVES INFO ABOUT THE HIT FOR FUTURE REFERENCE
-				Ref r(@hit_con, @h_out, h_out.damage(), hit_con.life());
+				Ref r(@hit_ent, @h_out, h_out.damage(), hit_hit.life());
 				refs.insertLast(r);
 				go = false;
 			}
@@ -193,10 +193,12 @@ class Wave	{
 		} else if (!go) { // ONCE THE WAVE HAS STOPPED, WE LOOK AT ENTITIES IT HIT TO ALLOCATE COMBO
 			for(uint i = 0; i < refs.length(); i++) {
 				if (refs[i].h.hit_outcome() == 1) { // IN THE CASE OF A HIT
-					if (refs[i].c.as_entity().type_name() == "enemy_tutorial_hexagon") {
+					if (refs[i].e.type_name() == "enemy_tutorial_hexagon") {
 						combo = 3; // A SUCCESSFUL HIT ON A BIG PRISM ALWAYS GIVES 3 COMBO
-					} else if (refs[i].c.as_entity().type_name() == "enemy_spring_ball") {
-						if (refs[i].life == refs[i].c.life()) { // IF THE HIT DIDN'T HURT THE SPRINGBLOB
+					} else if (refs[i].e.type_name() == "base_projectile") {
+						combo = 1; // HITTING A PORCUPINE QUILL ALWAYS GIVES 1 COMBO
+					} else if (refs[i].e.type_name() == "enemy_spring_ball") {
+						if (refs[i].life == refs[i].e.as_controllable().life()) { // IF THE HIT DIDN'T HURT THE SPRINGBLOB
 							combo = refs[i].damage; // GIVE COMBO FOR FULL DAMAGE
 						} else { // OTHERWISE NORMAL COMBO MATH APPLIES
 							combo = refs[i].life > refs[i].damage ? refs[i].damage: refs[i].life;
@@ -204,10 +206,8 @@ class Wave	{
 					} else {
 						combo = refs[i].life > refs[i].damage ? refs[i].damage: refs[i].life;
 					}
-					puts("Hit +" + combo + " (" + refs[i].c.as_entity().type_name() + ")");
 				} else if (refs[i].h.hit_outcome() == 3) { // IN THE CASE OF A PARRY
 					combo = 2*refs[i].damage; // PARRY RETURNS TWICE THE DAMAGE AS COMBO
-					puts("Parry +" + combo);
 				} else {
 					puts("Unexpected hit outcome: " + refs[i].h.hit_outcome());
 				}
@@ -224,13 +224,13 @@ class Wave	{
 }
 
 class Ref {
-	controllable@ c;
+	entity@ e;
 	hitbox@ h;
 	int damage;
 	int life;
 
-	Ref(controllable@ c, hitbox@ h, int damage, int life) {
-		@this.c = c;
+	Ref(entity@ e, hitbox@ h, int damage, int life) {
+		@this.e = e;
 		@this.h = h;
 		this.damage = damage;
 		this.life = life;
