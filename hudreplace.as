@@ -40,9 +40,8 @@ class script {
 	//FADE STUFF
 	float fade = 0.08;
 	uint32 time_cp = 0;
-	uint32 time_end = 0;
-	uint32 time_now = 0;
 	bool ending = false;
+	int ecount = 0;
 	
 	//COMBO STUFF
 	float combo_x;
@@ -134,15 +133,7 @@ class script {
 		float corner_x = (-1.0*(g.hud_screen_width(false)/2)); 
 		float corner_y = (g.hud_screen_height(false)/2);
 		
-		//LEVEL END FADEOUT HANDLING
-		if (ending) {
-			time_now = get_time_us();
-			if (time_now - time_end > 1000000) {
-				fade = min(fade, max(0.0, 2.0 - (time_now - time_end) / 1000000.0));
-				fade_combo = min(fade_combo, max(0.0, 2.0 - (time_now - time_end) / 1000000.0));
-			}
-		}
-		
+		//LEVEL END FADEOUT HANDLING		
 		uint32 fade_uint = 0xffffff | (uint(fade * 255) << 24);
 		uint32 combo_uint = 0xffffff | (uint(fade_combo * 255) << 24);
 		
@@ -160,10 +151,6 @@ class script {
 				}
 				ct.draw_text(text_time, time_x, time_y, 1, 1, 0);
 			}
-			
-			//TEST
-			//text_test.text(d.dead() + " - " + count_cp + " - " + ct.layer());
-			//ct.draw_text(text_test, 0, 250, 1, 1, 0);
 			
 			//COMBO LABEL
 			if (HUD_COMBO_LABEL) {
@@ -229,11 +216,13 @@ class script {
 		}
 		
 		//HUD FADE IN ON STARTUP
-		if (frame < -11) {
-			fade = sqrt(frame + 54) / 6.6;
-			//fade = sqrt(frame + 55) / 6.64;
-		} else {
-			fade = 1.0;
+		if (!ending) {
+			if (frame < -11) {
+				fade = sqrt(frame + 54) / 6.6;
+				//fade = sqrt(frame + 55) / 6.64;
+			} else {
+				fade = 1.0;
+			}
 		}
 		
 		if (running) { 
@@ -255,19 +244,10 @@ class script {
 				}
 			}
 			text_time.text(minute+":"+secs+"."+mils);
-			
-			//HUD COMBO BLINKING
-			if (d.combo_timer() < .295 && d.combo_count() != 0) {
-				blink_count++;
-				if (blink_count == 5) {
-					blink = !blink;
-					blink_count = 0;
-				}
-			} else {
-				blink = true;
-			}
 		}
-		
+	}
+
+	void step_fixed() {
 		//HUD COMBO BREAKING, WHICH CONTINUES TO FALL ON LEVEL END
 		if (falling) {
 			falling_x = falling_x + falling_velox;
@@ -388,6 +368,23 @@ class script {
 		
 		//DETERMINES METER LOCATION WITHIN BAR
 		superpos = 228.0*meter_visual/100 - 122;
+		
+		//HUD COMBO BLINKING
+			if (d.combo_timer() < .295 && d.combo_count() != 0) {
+				blink_count++;
+				if (blink_count == 5) {
+					blink = !blink;
+					blink_count = 0;
+				}
+			} else {
+				blink = true;
+			}
+
+		if (ending) {
+			ecount++;
+			fade = min(fade, max(0.0, (120.0 - ecount) / 60.0));
+			fade_combo = min(fade, max(0.0, (120.0 - ecount) / 60.0));
+		}
 	}
 
     void on_level_start() {
@@ -420,7 +417,6 @@ class script {
 	void on_level_end() {
 		running = false;
 		ending = true;
-		time_end = get_time_us();
 	}
 	
 	void falling_initialize() {
