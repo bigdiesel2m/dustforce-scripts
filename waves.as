@@ -42,10 +42,10 @@ class script : callback_base {
 		}
 	}
 	
-	void step_post(int entities) {
+	void step(int entities) {
 		//THIS STEPS EVERY EXISTING WAVE
 		for(uint i = 0; i < waves.length(); i++) {
-			waves[i].step_post(@g);
+			waves[i].step(@g);
 		}
 	}
 
@@ -86,8 +86,7 @@ class Wave	{
 	float y_offset = 0;
 	float speed = 35;
 	int timer = 0;
-	bool go = true;
-	bool done = false;
+	int status = 0;
 	array <Ref> refs;
 	int combo = 0;
 
@@ -98,9 +97,9 @@ class Wave	{
 		this.sound = sound;
 	}
 
-	void step_post(scene@ g) {
-		if (done) return;
-		if (go) {
+	void step(scene@ g) {
+		if (status == 3) return;
+		if (status == 0) {
 			speed = speed - 1.4;
 			//THIS SWITCH DEFINES THE ANGLES THE WAVES TRAVEL AT
 			switch (h.attack_dir()) {
@@ -167,7 +166,7 @@ class Wave	{
 				// THIS SAVES INFO ABOUT THE HIT FOR FUTURE REFERENCE
 				Ref r(@hit_ent, @h_out, h_out.damage(), hit_hit.life());
 				refs.insertLast(r);
-				go = false;
+				status = 1;
 			}
 
 			// THIS SECTION CHECKS TO SEE IF THE HITBOX HIT A WALL AND STOPS IT IF SO
@@ -182,15 +181,17 @@ class Wave	{
 			float end_y = mid_y - cos(h_out.attack_dir() * pi / 180) * diag / 4;
 			raycast@ ray = g.ray_cast_tiles(start_x, start_y, end_x, end_y);
 			if (ray.hit()) {
-				go = false;
+				status = 1;
 			}
 
 			// THIS SECTION INCREMENTS THE TIMER AND STOPS THE HITBOX IF IT TIMES OUT
 			timer++;
 			if (timer > 20) { 
-				go = false;
+				status = 1;
 			}
-		} else if (!go) { // ONCE THE WAVE HAS STOPPED, WE LOOK AT ENTITIES IT HIT TO ALLOCATE COMBO
+		} else if (status == 1) {
+			status = 2;
+		} else if (status == 2) { // ONCE THE WAVE HAS STOPPED, WE LOOK AT ENTITIES IT HIT TO ALLOCATE COMBO
 			for(uint i = 0; i < refs.length(); i++) {
 				if (refs[i].h.hit_outcome() == 1) { // IN THE CASE OF A HIT
 					if (refs[i].e.type_name() == "enemy_tutorial_hexagon") {
@@ -214,7 +215,7 @@ class Wave	{
 				dm.combo_count(dm.combo_count() + combo);
 				dm.combo_timer(1);
 			}
-			done = true;
+			status = 3;
 		}
 	}
 	
