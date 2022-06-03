@@ -32,12 +32,9 @@ class script {
 	[boolean|tooltip:"Time"]
     bool HUD_TIME = true;
 	
-	//TIME STUFF
-	bool running = true;
-	int frame = -54;
-	int count_cp = 0;
-		
 	//FADE STUFF
+	int fadein = 0;
+	bool running = true;
 	float fade = 0.08;
 	uint32 time_cp = 0;
 	bool ending = false;
@@ -205,49 +202,38 @@ class script {
 			}
 		}
     }
-	
-	void step(int entities) {
-		//TIME INCREMENTER
-		if(running && not d.dead()) {
-			count_cp--;
-			if (count_cp < 0) {
-				frame++;
+
+	void step_post(int entities) {
+		//HUD TIMER, IN STEP POST TO AVOID OFF-BY-ONE ERRORS
+		int timer = g.time_in_level();
+		int minute = floor(timer / 1000 / 60.0);
+		int sec = timer / 1000 % 60;
+		int mil = timer % 1000;
+		string secs = ""+sec;
+		string mils = ""+mil;
+		if (sec < 10) {
+			secs = "0"+secs;
+		}
+		if (mil < 100) {
+			mils = "0"+mils;
+			if (mil < 10) {
+				mils = "0"+mils;
 			}
 		}
-		
+		text_time.text(minute+":"+secs+"."+mils);
+	}
+
+	void step_fixed() {
 		//HUD FADE IN ON STARTUP
 		if (!ending) {
-			if (frame < -11) {
-				fade = sqrt(frame + 54) / 6.6;
-				//fade = sqrt(frame + 55) / 6.64;
+			fadein++;
+			if (fadein < 60) {
+				fade = fadein / 60.0;
 			} else {
 				fade = 1.0;
 			}
 		}
-		
-		if (running) { 
-			//HUD TIMER, WHICH STOPS ON LEVEL END
-			//THE FOLLOWING MATH STOLEN FROM ALEXSPEEDY
-			int timer = max(0, int(floor(frame * 1000.0 / 60.0)));
-			int minute = floor(timer / 1000 / 60.0);
-			int sec = timer / 1000 % 60;
-			int mil = timer % 1000;
-			string secs = ""+sec;
-			string mils = ""+mil;
-			if (sec < 10) {
-				secs = "0"+secs;
-			}
-			if (mil < 100) {
-				mils = "0"+mils;
-				if (mil < 10) {
-					mils = "0"+mils;
-				}
-			}
-			text_time.text(minute+":"+secs+"."+mils);
-		}
-	}
 
-	void step_fixed() {
 		//HUD COMBO BREAKING, WHICH CONTINUES TO FALL ON LEVEL END
 		if (falling) {
 			falling_x = falling_x + falling_velox;
@@ -398,8 +384,7 @@ class script {
     void checkpoint_load() {
 		initialize();
 		
-		//TIMER ADJUSTMENT
-		count_cp = 5;
+		//TIME GRAB FOR LAYER STUFF
 		time_cp = get_time_us();
 		
 		//SUPERBAR ADJUSTMENT
