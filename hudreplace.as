@@ -1,7 +1,6 @@
 /* 
 HUD replacement script I developed while working on sideways.as
 Includes options to hide individual parts of the HUD such as the Combo, Special Meter, or Time
-Most the math for the script is run in step, so while everything will continue to draw when the game is paused, animations will not update. This causes a few discrepancies compared to the vanilla HUD, but these differences are fairly minor and are not easily solvable. This is also noticeable during the end level slowdown.
 */
 class script {
     scene@ g;
