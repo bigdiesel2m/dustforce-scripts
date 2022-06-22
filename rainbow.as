@@ -6,10 +6,6 @@ const array <int> COLORS = {16,17,20,21,22,23};
 class script {
 	scene@ g;
 	dustman@ dm;
-
-	string anim = "";
-	int face = 1;
-	int frame = 0;
 	sprites@ spr;
 
 	array <State> states(COLORS.length() + 1);
@@ -30,31 +26,27 @@ class script {
 			float y_dif = states[i+1].y - states[i].y;
 			float x_offset = 0;
 			float y_offset = 0;
-			uint draws = 0;
 
-			if (abs(x_dif) > abs(y_dif)) {
-				draws = abs(int(x_dif/2));
-				x_offset = 2;
-				if (draws != 0) {
+			uint draws = (abs(x_dif) > abs(y_dif) ? abs(int(x_dif/2)) : abs(int(y_dif/2)));
+			if (draws != 0) {
+				if (abs(x_dif) > abs(y_dif)) {
+					x_offset = 2;
 					y_offset = 2*int(y_dif/2) / float(draws);
-				} else {y_offset = 0;}
-			} else {
-				draws = abs(int(y_dif/2));
-				y_offset = 2;
-				if (draws != 0) {
+				} else {
+					y_offset = 2;
 					x_offset = 2*int(x_dif/2) / float(draws);
-				} else {x_offset = 0;}
-			}
-			for (uint j=0; j <= draws; j++) {
-				spr.draw_world(17, COLORS[i], states[i+1].anim, states[i+1].frame, 0, (states[i].x + j*x_offset), (states[i].y + j*y_offset), states[i+1].r, states[i+1].face, 1, 0xFFFFFFFF);
+				}
+				for (uint j=0; j <= draws; j++) {
+					spr.draw_world(17, COLORS[i], states[i+1].anim, states[i+1].frame, 0, (states[i].x + j*x_offset), (states[i].y + j*y_offset), states[i+1].r, states[i+1].face, 1, 0xFFFFFFFF);
+				}
 			}
 		}
-		//text_test.text("Anim: " + anim + " - " + dm.rotation() + " - " + (dm.x() - x_array[5]));
+		//text_test.text("Anim: " + states[6].anim + " - " + states[6].frame);
 		//text_test.draw_hud(0, 0, -790, -350, 1, 1, 0);
 	}
 	
 	void step_post(int entities) {
-		State s(dm.x(), dm.y(), dm.rotation(), dm.face(), dm.sprite_index(), uint(max(dm.state_timer(), 0.0)) % spr.get_animation_length(anim));
+		State s(dm.x(), dm.y(), dm.rotation(), dm.face(), dm.sprite_index(), uint(max(dm.state_timer(), 0.0)) % spr.get_animation_length(dm.sprite_index()));
 		states.insertLast(s);
 		states.removeAt(0);
 	}
@@ -71,7 +63,7 @@ class script {
 		@dm = controller_controllable(0).as_dustman();
 		@spr = dm.get_sprites();
 		for (uint i=0; i < states.length(); i++) {
-			State s(dm.x(), dm.y(), dm.rotation(), dm.face(), dm.sprite_index(), uint(max(dm.state_timer(), 0.0)) % spr.get_animation_length(anim));
+			State s(dm.x(), dm.y(), dm.rotation(), dm.face(), dm.sprite_index(), uint(max(dm.state_timer(), 0.0)) % spr.get_animation_length(dm.sprite_index()));
 			states[i] = s;
 		}
 	}
