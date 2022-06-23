@@ -41,12 +41,12 @@ class script {
 				}
 			}
 		}
-		//text_test.text("Anim: " + states[6].anim + " - " + states[6].frame);
+		//text_test.text("Anim: " + dm.draw_offset_x() + " - " + dm.draw_offset_y());
 		//text_test.draw_hud(0, 0, -790, -350, 1, 1, 0);
 	}
 	
 	void step_post(int entities) {
-		State s(dm.x(), dm.y(), dm.rotation(), dm.face(), dm.sprite_index(), uint(max(dm.state_timer(), 0.0)) % spr.get_animation_length(dm.sprite_index()));
+		State s(spr, dm);
 		states.insertLast(s);
 		states.removeAt(0);
 	}
@@ -63,13 +63,15 @@ class script {
 		@dm = controller_controllable(0).as_dustman();
 		@spr = dm.get_sprites();
 		for (uint i=0; i < states.length(); i++) {
-			State s(dm.x(), dm.y(), dm.rotation(), dm.face(), dm.sprite_index(), uint(max(dm.state_timer(), 0.0)) % spr.get_animation_length(dm.sprite_index()));
+			State s(spr, dm);
 			states[i] = s;
 		}
 	}
 }
 
 class State {
+	sprites@ spr;
+	dustman@ dm;
 	float x;
 	float y;
 	float r;
@@ -77,13 +79,15 @@ class State {
 	string anim;
 	uint frame;
 
-	State(float x, float y, float r, int face, string anim, uint frame) {
-		this.x = x;
-		this.y = y;
-		this.r = r;
-		this.face = face;
-		this.anim = anim;
-		this.frame = frame;
+	State(sprites@ spr, dustman@ dm) {
+		@this.spr = spr;
+		@this.dm = dm;
+		this.x = dm.x();
+		this.y = dm.y();
+		this.r = dm.rotation();
+		this.face = dm.face();
+		this.anim = dm.sprite_index();
+		this.frame = uint(max(dm.state_timer(), 0.0)) % spr.get_animation_length(dm.sprite_index());
 	}
 	
 	State() {
