@@ -1,7 +1,10 @@
 /* 
 COMMENT HEADER
 */
-const array <int> COLORS = {16,17,20,21,22,23};
+
+const array <uint32> COLORS = {0xFF750787,0xFF004DFF,0xFF008026,0xFFFFED00,0xFFFF8C00,0xFFE40303};
+const array <int> COLORS_L = {17,17,17,17,17,18};
+const array <int> COLORS_SL = {20,21,22,23,24,1};
 
 class script {
 	scene@ g;
@@ -37,7 +40,7 @@ class script {
 					x_offset = 2*int(x_dif/2) / float(draws);
 				}
 				for (uint j=0; j <= draws; j++) {
-					spr.draw_world(17, COLORS[i], states[i+1].anim, states[i+1].frame, 0, (states[i+1].x + states[i+1].xo - j*x_offset), (states[i+1].y + states[i+1].yo - j*y_offset), states[i+1].r, states[i+1].face, 1, 0xFFFFFFFF);
+					spr.draw_world(COLORS_L[i], COLORS_SL[i], states[i+1].anim, states[i+1].frame, 0, (states[i+1].x + states[i+1].xo - j*x_offset), (states[i+1].y + states[i+1].yo - j*y_offset), states[i+1].r, states[i+1].face, 1, 0xFFFFFFFF);
 				}
 			}
 		}
@@ -46,9 +49,19 @@ class script {
 	}
 	
 	void step_post(int entities) {
+		// STATE HANDLING
 		State s(spr, dm);
 		states.insertLast(s);
 		states.removeAt(0);
+
+		// FOG HANDLING
+		camera@ cam = get_camera(0);
+		fog_setting@ fog = cam.get_fog();
+		for (uint i=0; i < COLORS.length(); i++) {
+			fog.colour(COLORS_L[i], COLORS_SL[i], COLORS[i]);
+			fog.percent(COLORS_L[i], COLORS_SL[i], 1);
+		}
+		cam.change_fog(fog, 0.0);
 	}
 
 	void on_level_start() {
