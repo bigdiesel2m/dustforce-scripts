@@ -37,12 +37,12 @@ class script {
 					x_offset = 2*int(x_dif/2) / float(draws);
 				}
 				for (uint j=0; j <= draws; j++) {
-					spr.draw_world(17, COLORS[i], states[i+1].anim, states[i+1].frame, 0, (states[i].x + j*x_offset), (states[i].y + j*y_offset), states[i+1].r, states[i+1].face, 1, 0xFFFFFFFF);
+					spr.draw_world(17, COLORS[i], states[i+1].anim, states[i+1].frame, 0, (states[i+1].x + states[i+1].xo - j*x_offset), (states[i+1].y + states[i+1].yo - j*y_offset), states[i+1].r, states[i+1].face, 1, 0xFFFFFFFF);
 				}
 			}
 		}
-		//text_test.text("Anim: " + dm.draw_offset_x() + " - " + dm.draw_offset_y());
-		//text_test.draw_hud(0, 0, -790, -350, 1, 1, 0);
+		//text_test.text("Y Values: " + states[5].y + " - " + states[6].y);
+		//text_test.draw_hud(0, 0, 0, -350, 1, 1, 0);
 	}
 	
 	void step_post(int entities) {
@@ -79,6 +79,9 @@ class State {
 	string anim;
 	uint frame;
 
+	float xo;
+	float yo;
+
 	State(sprites@ spr, dustman@ dm) {
 		@this.spr = spr;
 		@this.dm = dm;
@@ -88,6 +91,9 @@ class State {
 		this.face = dm.face();
 		this.anim = dm.sprite_index();
 		this.frame = uint(max(dm.state_timer(), 0.0)) % spr.get_animation_length(dm.sprite_index());
+
+		this.xo = dm.draw_offset_x();
+		this.yo = dm.draw_offset_y();
 	}
 	
 	State() {
