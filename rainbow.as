@@ -1,5 +1,7 @@
 /* 
-COMMENT HEADER
+Rainbow trail script I made just for fun.
+Might try to incorporate this idea into a larger script, but no guarantees. :P
+To do: adjust fog sublayer stuff to change fog triggers on the map, rather than constantly on the camera.
 */
 
 const array <uint32> COLORS = {0xFF750787,0xFF004DFF,0xFF008026,0xFFFFED00,0xFFFF8C00,0xFFE40303};
@@ -13,14 +15,8 @@ class script {
 
 	array <State> states(COLORS.length() + 1);
 
-	textfield@ text_test;
-
 	script() {
 		@g = get_scene();
-		
-		@text_test = @create_textfield();
-		text_test.align_horizontal(-1);
-		text_test.align_vertical(1);
 	}
 
 	void draw(float subframe) {
@@ -39,13 +35,11 @@ class script {
 					y_offset = 2;
 					x_offset = 2*int(x_dif/2) / float(draws);
 				}
-				for (uint j=0; j <= draws; j++) {
+				for (uint j=1; j <= draws; j++) {
 					spr.draw_world(COLORS_L[i], COLORS_SL[i], states[i+1].anim, states[i+1].frame, 0, (states[i+1].x + states[i+1].xo - j*x_offset), (states[i+1].y + states[i+1].yo - j*y_offset), states[i+1].r, states[i+1].face, 1, 0xFFFFFFFF);
 				}
 			}
 		}
-		//text_test.text("Y Values: " + states[5].y + " - " + states[6].y);
-		//text_test.draw_hud(0, 0, 0, -350, 1, 1, 0);
 	}
 	
 	void step_post(int entities) {
@@ -88,9 +82,9 @@ class State {
 	float x;
 	float y;
 	float r;
-	int face;
 	string anim;
 	uint frame;
+	int face;
 
 	float xo;
 	float yo;
@@ -101,9 +95,15 @@ class State {
 		this.x = dm.x();
 		this.y = dm.y();
 		this.r = dm.rotation();
-		this.face = dm.face();
-		this.anim = dm.sprite_index();
-		this.frame = uint(max(dm.state_timer(), 0.0)) % spr.get_animation_length(dm.sprite_index());
+		if (dm.attack_state() == 0) {
+			this.anim = dm.sprite_index();
+			this.frame = uint(max(dm.state_timer(), 0.0)) % spr.get_animation_length(dm.sprite_index());
+			this.face = dm.face();
+		} else {
+			this.anim = dm.attack_sprite_index();
+			this.frame = uint(max(dm.attack_timer(), 0.0)) % spr.get_animation_length(dm.attack_sprite_index());
+			this.face = dm.attack_face();
+		}
 
 		this.xo = dm.draw_offset_x();
 		this.yo = dm.draw_offset_y();
