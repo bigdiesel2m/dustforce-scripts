@@ -3,11 +3,11 @@ HUD replacement script I developed while working on sideways.as
 Includes options to hide individual parts of the HUD such as the Combo, Special Meter, or Time
 */
 class script {
-    scene@ g;
+	scene@ g;
 	camera@ cam;
 	canvas@ c;
 	canvas@ ct;
-    dustman@ d;
+	dustman@ d;
 	
 	textfield@ text_time;
 	textfield@ text_test;
@@ -23,13 +23,13 @@ class script {
 	
 	//HUD OPTIONS
 	[boolean|tooltip:"COMBO text"]
-    bool HUD_COMBO_LABEL = true;
+	bool HUD_COMBO_LABEL = true;
 	[boolean|tooltip:"Combo number"]
-    bool HUD_COMBO_NUM = true;
+	bool HUD_COMBO_NUM = true;
 	[boolean|tooltip:"Special meter"]
-    bool HUD_METER = true;
+	bool HUD_METER = true;
 	[boolean|tooltip:"Time"]
-    bool HUD_TIME = true;
+	bool HUD_TIME = true;
 	
 	//FADE STUFF
 	int fadein = 0;
@@ -84,8 +84,8 @@ class script {
 	int pulse_step = 0;
 	int super_step = 0;
 	
-    script() {
-        @g = get_scene();
+	script() {
+		@g = get_scene();
 		@cam = get_camera(0);
 		
 		@c = create_canvas(true, 0, 0);
@@ -96,35 +96,35 @@ class script {
 		@supersprites = create_sprites();
 		supersprites.add_sprite_set("editor");
 		
-        @text_time = @create_textfield();
-        text_time.set_font("Caracteres", 26);
-        text_time.align_horizontal(-1);
-        text_time.align_vertical(1);
+		@text_time = @create_textfield();
+		text_time.set_font("Caracteres", 26);
+		text_time.align_horizontal(-1);
+		text_time.align_vertical(1);
 		text_time.text("0:00.000");
 		
-        @text_test = @create_textfield();
-        text_test.set_font("Caracteres", 26);
-        text_test.align_horizontal(-1);
-        text_test.align_vertical(1);
+		@text_test = @create_textfield();
+		text_test.set_font("Caracteres", 26);
+		text_test.align_horizontal(-1);
+		text_test.align_vertical(1);
 		
-        @text_label = @create_textfield();
-        text_label.set_font("Caracteres", 26);
-        text_label.align_horizontal(-1);
-        text_label.align_vertical(1);
+		@text_label = @create_textfield();
+		text_label.set_font("Caracteres", 26);
+		text_label.align_horizontal(-1);
+		text_label.align_vertical(1);
 		text_label.text("COMBO");
 		
-        @text_combo = @create_textfield();
-        text_combo.set_font("Caracteres", 92);
-        text_combo.align_horizontal(0);
-        text_combo.align_vertical(0);
+		@text_combo = @create_textfield();
+		text_combo.set_font("Caracteres", 92);
+		text_combo.align_horizontal(0);
+		text_combo.align_vertical(0);
 		
-        @text_falling = @create_textfield();
-        text_falling.set_font("Caracteres", 92);
-        text_falling.align_horizontal(0);
-        text_falling.align_vertical(0);
-    }
+		@text_falling = @create_textfield();
+		text_falling.set_font("Caracteres", 92);
+		text_falling.align_horizontal(0);
+		text_falling.align_vertical(0);
+	}
 	
-    void draw(float subframe) {
+	void draw(float subframe) {
 		//FIND CORNER OF SCREEN
 		float corner_x = (-1.0*(g.hud_screen_width(false)/2)); 
 		float corner_y = (g.hud_screen_height(false)/2);
@@ -200,7 +200,7 @@ class script {
 				c.draw_text(text_falling, falling_x, falling_y, falling_scale, falling_scale, falling_angle);
 			}
 		}
-    }
+	}
 
 	void step_post(int entities) {
 		//HUD TIMER, IN STEP POST TO AVOID OFF-BY-ONE ERRORS
@@ -372,15 +372,15 @@ class script {
 		}
 	}
 
-    void on_level_start() {
+	void on_level_start() {
 		initialize();
-    }
+	}
 	
 	void checkpoint_save() {
 		checkpointed = true;
 	}
 
-    void checkpoint_load() {
+	void checkpoint_load() {
 		initialize();
 		
 		//TIME GRAB FOR LAYER STUFF
@@ -396,7 +396,7 @@ class script {
 		if (d.skill_combo() >= 100) {
 			superpulse = true;
 		}
-    }
+	}
 	
 	void on_level_end() {
 		running = false;
@@ -436,7 +436,7 @@ class script {
 		blink_count = 0;
 		
 		//CREATE DICTIONARY TO GET PROPER SPRITE NAMES
-        @d = @controller_controllable(0).as_dustman();
+		@d = @controller_controllable(0).as_dustman();
 		dictionary characterCodes = {
 			{'dustman', 'dm'},
 			{'dustgirl', 'dg'},
