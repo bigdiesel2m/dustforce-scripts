@@ -12,14 +12,12 @@ class script {
 class Neon : trigger_base {
 	[text] int layer = 20;
 	[text] float rotation = 0;
-	[text] float scale_x = 1;
-	[text] float scale_y = 1;
+	[text] float scale = 1;
 
 	script@ s;
 	sprites@ spr;
 	scripttrigger@ self;
 
-	uint32 colour = 0xFFFFFFFF;
 	uint timer = 0;
 	int SL1 = 22;
 	int SL2 = 20;
@@ -52,17 +50,17 @@ class Neon : trigger_base {
 	}
 
 	void draw_it() {
-		draw_neon(spr, layer, SL1, SET[0], 2, 0, self.x(), self.y(), rotation, scale_x, scale_y, colour);
-		draw_neon(spr, layer, SL1, SET[1], 0, 0, self.x(), self.y(), rotation, scale_x, scale_y, colour);
-		draw_neon(spr, layer, SL2, SET[2], 2, 0, self.x(), self.y(), rotation, scale_x, scale_y, colour);
-		draw_neon(spr, layer, SL2, SET[3], 1, 0, self.x(), self.y(), rotation, scale_x, scale_y, colour);
+		draw_neon(spr, layer, SL1, SET[0], 2, 0, self.x(), self.y(), rotation, scale);
+		draw_neon(spr, layer, SL1, SET[1], 0, 0, self.x(), self.y(), rotation, scale);
+		draw_neon(spr, layer, SL2, SET[2], 2, 0, self.x(), self.y(), rotation, scale);
+		draw_neon(spr, layer, SL2, SET[3], 1, 0, self.x(), self.y(), rotation, scale);
 	}
 
-	void draw_neon(sprites@ spr, int layer, int sub_layer, string spriteName, uint32 frame, uint32 palette, float x, float y, float rotation, float scale_x, float scale_y, uint32 colour) {
-		spr.draw_world(layer, sub_layer, spriteName, frame, palette, x+1, y+1, rotation, scale_x, scale_y, colour);
-		spr.draw_world(layer, sub_layer, spriteName, frame, palette, x+1, y-1, rotation, scale_x, scale_y, colour);
-		spr.draw_world(layer, sub_layer, spriteName, frame, palette, x-1, y-1, rotation, scale_x, scale_y, colour);
-		spr.draw_world(layer, sub_layer, spriteName, frame, palette, x-1, y+1, rotation, scale_x, scale_y, colour);
-		spr.draw_world(layer, sub_layer+1, spriteName, frame, palette, x, y, rotation, scale_x, scale_y, 0xFF000000);
+	void draw_neon(sprites@ spr, int layer, int sub_layer, string spriteName, uint32 frame, uint32 palette, float x, float y, float rotation, float scale) {
+		spr.draw_world(layer, sub_layer, spriteName, frame, palette, x+1, y+1, rotation, scale, scale, 0xFFFFFFFF);
+		spr.draw_world(layer, sub_layer, spriteName, frame, palette, x+1, y-1, rotation, scale, scale, 0xFFFFFFFF);
+		spr.draw_world(layer, sub_layer, spriteName, frame, palette, x-1, y-1, rotation, scale, scale, 0xFFFFFFFF);
+		spr.draw_world(layer, sub_layer, spriteName, frame, palette, x-1, y+1, rotation, scale, scale, 0xFFFFFFFF);
+		spr.draw_world(layer, sub_layer+1, spriteName, frame, palette, x, y, rotation, scale, scale, 0xFF000000);
 	}
 }
