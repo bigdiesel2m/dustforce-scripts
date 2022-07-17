@@ -1,5 +1,6 @@
 /* 
-COMMENT HEADER
+"Neon" script made for DLC 3
+Thank you to msg555 and Alexspeedy for their help making the script.
 */
 
 class script {
@@ -36,45 +37,6 @@ class Neon {
 		tf.draw_world(layer, sub_layer, x-(1*scale_x), y-(1*scale_y), scale_x, scale_y, rotation);
 		tf.draw_world(layer, sub_layer, x-(1*scale_x), y+(1*scale_y), scale_x, scale_y, rotation);
 		tf.draw_world(layer, sub_layer+1, x, y, scale_x, scale_y, rotation);
-	}
-
-	void neon_rect(sprites@ spr, int layer, int sub_layer, float x, float y, float rotation, float scale_x, float scale_y) {
-		spr.draw_world(layer, sub_layer, "backdrop1", 0, 0, x, y, rotation, scale_x, scale_y, 0xFFFFFFFF);
-	}
-}
-
-class Rect : Neon, trigger_base {
-	uint timer = 0;
-	int SL1 = 22;
-	
-	void init(script@ s, scripttrigger@ self) {
-		@g = get_scene();
-		bg_visible = g.layer_visible(3);
-		if (bg_visible) {
-			@spr = create_sprites();
-			spr.add_sprite_set("backdrops");
-			@this.s = s;
-			@this.self = @self;
-		}
-	}
-	
-	void step() {
-		if (bg_visible) {
-		}
-	}
-	
-	void editor_draw(float f) {
-		draw_it();
-	}
-
-	void draw(float subframe) {
-		draw_it();
-	}
-
-	void draw_it() {
-		if (bg_visible) {
-			neon_rect(spr, layer, SL1, self.x(), self.y(), rotation, scale_x, scale_y);
-		}
 	}
 }
 
