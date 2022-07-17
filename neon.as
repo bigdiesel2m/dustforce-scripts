@@ -17,6 +17,7 @@ class Neon {
 	sprites@ spr;
 	textfield@ tf;
 	scripttrigger@ self;
+	scene@ g;
 	bool mid_visible = false;
 
 	void draw_neon(sprites@ spr, int layer, int sub_layer, string spriteName, uint32 frame, uint32 palette, float x, float y, float rotation, float scale_x, float scale_y) {
@@ -34,6 +35,52 @@ class Neon {
 		tf.draw_world(layer, sub_layer, x-1, y+1, scale_x, scale_y, rotation);
 		tf.draw_world(layer, sub_layer+1, x, y, scale_x, scale_y, rotation);
 	}
+
+	void neon_rect(sprites@ spr, int layer, int sub_layer, float x, float y, float rotation, float scale_x, float scale_y) {
+		spr.draw_world(layer, sub_layer, "backdrop1", 0, 0, x, y, rotation, scale_x, scale_y, 0xFFFFFFFF);
+	}
+}
+
+class Rect : Neon, trigger_base {
+	uint timer = 0;
+	int SL1 = 22;
+	
+	void init(script@ s, scripttrigger@ self) {
+		@g = get_scene();
+		mid_visible = g.layer_visible(11);
+		if (mid_visible) {
+			@spr = create_sprites();
+			spr.add_sprite_set("backdrops");
+			@this.s = s;
+			@this.self = @self;
+		}
+	}
+	
+	void step() {
+		if (mid_visible) {
+			timer = (timer + 1);
+			if (timer == 50) {
+				SL1 = 20;
+			} else if (timer == 55) {
+				SL1 = 22;
+				timer = 0;
+			}
+		}
+	}
+	
+	void editor_draw(float f) {
+		draw_it();
+	}
+
+	void draw(float subframe) {
+		draw_it();
+	}
+
+	void draw_it() {
+		if (mid_visible) {
+			neon_rect(spr, layer, SL1, self.x(), self.y(), rotation, scale_x, scale_y);
+		}
+	}
 }
 
 class ManSwipe : Neon, trigger_base {
@@ -42,7 +89,8 @@ class ManSwipe : Neon, trigger_base {
 	int SL2 = 20;
 	
 	void init(script@ s, scripttrigger@ self) {
-		mid_visible = get_scene().layer_visible(11);
+		@g = get_scene();
+		mid_visible = g.layer_visible(11);
 		if (mid_visible) {
 			@spr = create_sprites();
 			spr.add_sprite_set("dustman");
@@ -90,7 +138,8 @@ class KidDash : Neon, trigger_base {
 	int SL3 = 20;
 	
 	void init(script@ s, scripttrigger@ self) {
-		mid_visible = get_scene().layer_visible(11);
+		@g = get_scene();
+		mid_visible = g.layer_visible(11);
 		if (mid_visible) {
 			@spr = create_sprites();
 			spr.add_sprite_set("dustkid");
@@ -143,7 +192,8 @@ class WorthHeavy : Neon, trigger_base {
 	int SL2 = 20;
 	
 	void init(script@ s, scripttrigger@ self) {
-		mid_visible = get_scene().layer_visible(11);
+		@g = get_scene();
+		mid_visible = g.layer_visible(11);
 		if (mid_visible) {
 			@this.s = s;
 			@this.self = @self;
@@ -193,7 +243,8 @@ class LeafNod : Neon, trigger_base {
 	int SL3 = 20;
 	
 	void init(script@ s, scripttrigger@ self) {
-		mid_visible = get_scene().layer_visible(11);
+		@g = get_scene();
+		mid_visible = g.layer_visible(11);
 		if (mid_visible) {
 			@this.s = s;
 			@this.self = @self;
@@ -251,7 +302,8 @@ class BearSleep : Neon, trigger_base {
 	int SL4 = 20;
 	
 	void init(script@ s, scripttrigger@ self) {
-		mid_visible = get_scene().layer_visible(11);
+		@g = get_scene();
+		mid_visible = g.layer_visible(11);
 		if (mid_visible) {
 			@this.s = s;
 			@this.self = @self;
@@ -303,6 +355,61 @@ class BearSleep : Neon, trigger_base {
 			neon_text(tf, layer, SL2, self.x()+60, self.y()-100, scale_x, scale_y, 30);
 			neon_text(tf, layer, SL3, self.x()+70, self.y()-140, scale_x, scale_y, -10);
 			neon_text(tf, layer, SL4, self.x()+65, self.y()-180, scale_x, scale_y, 20);
+		}
+	}
+}
+
+class DustDustDust : Neon, trigger_base {
+	uint timer = 0;
+	int SL1 = 20;
+	int SL2 = 20;
+	int SL3 = 20;
+	
+	void init(script@ s, scripttrigger@ self) {
+		@g = get_scene();
+		mid_visible = g.layer_visible(11);
+		if (mid_visible) {
+			@this.s = s;
+			@this.self = @self;
+
+			@tf = create_textfield();
+			tf.text("DUST");
+			tf.set_font("ProximaNovaReg", 72);
+			tf.colour(0xFFFFFFFF);
+		}
+	}
+	
+	void step() {
+		if (mid_visible) {
+			timer = (timer + 1);
+			if (timer == 30) {
+				SL1 = 22;
+			} else if (timer == 60) {
+				SL2 = 22;
+			} else if (timer == 90) {
+				SL3 = 22;
+			} else if (timer == 120) {
+				SL1 = 20;
+				SL2 = 20;
+				SL3 = 20;
+				timer = 0;
+			}
+		}
+	}
+	
+	void editor_draw(float f) {
+		draw_it();
+	}
+
+	void draw(float subframe) {
+		draw_it();
+	}
+
+	void draw_it() {
+		if (mid_visible) {
+			neon_text(tf, layer, SL1, self.x(), self.y(), scale_x, scale_y, 0);
+			neon_text(tf, layer, SL2, self.x(), self.y()+75, scale_x, scale_y, 0);
+			neon_text(tf, layer, SL3, self.x(), self.y()+150, scale_x, scale_y, 0);
 		}
 	}
 }
