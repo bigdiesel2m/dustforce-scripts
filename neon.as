@@ -1,6 +1,7 @@
 /* 
-"Neon" script made for DLC 3
+Neon sign script made during DLC 3, used in our map "Neon District".
 Thank you to msg555 and Alexspeedy for their help making the script.
+http://atlas.dustforce.com/11487/neon-district
 */
 
 class script {
@@ -585,10 +586,10 @@ class KidTaunt : Neon, trigger_base {
 	void step() {
 		if (bg_visible) {
 			timer = (timer + 1);
-			if (timer == 15) {
-				SL1 = 22;
-			} else if (timer == 75) {
+			if (timer == 75) {
 				SL1 = 20;
+			} else if (timer == 125) {
+				SL1 = 22;
 				timer = 0;
 			}
 		}
@@ -861,15 +862,6 @@ class BigTree : Neon, trigger_base {
 	}
 	
 	void step() {
-		if (bg_visible) {
-			timer = (timer + 1);
-			if (timer == 90) {
-				SL1 = 20;
-			} else if (timer == 105) {
-				SL1 = 22;
-				timer = 0;
-			}
-		}
 	}
 	
 	void editor_draw(float f) {
