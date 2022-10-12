@@ -1,4 +1,5 @@
 ## Completed Scripts
+[credits.as](credits.as) - mapmaker credits script, used in [Cyber Complex 4](http://atlas.dustforce.com/11677/cyber-complex-4)  
 [extraprops.as](extraprops.as) - fake prop script for arbitrary sprites, used in [Tire Museum](http://atlas.dustforce.com/11114/tire-museum)  
 [hudreplace.as](hudreplace.as) - HUD replacement script with ability to selectively turn off HUD elements  
 [nana.as](nana.as) - "Ice Climbers" script made for CMJ 2, used in [Popo and Nana](http://atlas.dustforce.com/10977/popo-and-nana)  
