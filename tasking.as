@@ -26,6 +26,7 @@ class script {
 
 	int time_main = 0;
 	array <entity@> effects;
+	int frame_count = 0;
 
 
 	script() {
@@ -43,6 +44,7 @@ class script {
 			standardize_intents(@man);
 			advance_active = false;
 			advance_happening = true;
+			frame_count++;
 		}
 		
 		for(uint i = 0; i < effects.length(); i++) {
@@ -228,6 +230,46 @@ class script {
 		
 		if (player.heavy_intent() > 9)
 			heavy_counter = player.heavy_intent();
+	}
+}
+
+class Leaderboard : trigger_base {
+	script@ s;
+	scripttrigger@ self;
+	scene@ g;
+	textfield@ tf;
+	textfield@ tf2;
+			
+	void init(script@ s, scripttrigger@ self) {
+		@this.s = s;
+		@this.self = @self;
+		@g = get_scene();
+
+		@tf = create_textfield();
+		tf.text("FRAME COUNT");
+		tf.set_font("ProximaNovaReg", 72);
+		tf.colour(0xFFFFFFFF);
+
+		@tf2 = create_textfield();
+		tf2.text("");
+		tf2.set_font("ProximaNovaReg", 100);
+		tf2.colour(0xFFFFFFFF);
+	}
+
+	void editor_draw(float subframe) {
+		draw_it();
+	}
+
+	void draw(float subframe) {
+		draw_it();
+	}
+
+	void draw_it() {
+		float x = self.x();
+		float y = self.y();
+		tf.draw_world(20, 20, x, y, 1, 1, 0);
+		tf2.text(""+s.frame_count);
+		tf2.draw_world(20, 20, x-120, y+120, 1, 1, 0);
 	}
 }
 
