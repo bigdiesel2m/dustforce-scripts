@@ -1,6 +1,8 @@
 /* 
-Avant-garde script
+Avant-garde script made for CMJ 6
+Big thanks to Skyhawk for his code and advice
 */
+const string EMBED_stopwatch = "files/stopwatch.png";
 
 class script {
 	scene@ g;
@@ -32,6 +34,10 @@ class script {
 	script() {
 		@g = get_scene();
 	}
+
+    void build_sprites(message@ msg) {
+		msg.set_string("stopwatch", "stopwatch");
+    }
 	
 	bool advance_happening = false;
 	void step(int) {
@@ -49,6 +55,9 @@ class script {
 		
 		for(uint i = 0; i < effects.length(); i++) {
 			effects[i].time_warp(time_main);
+		}
+		if (man.as_dustman().dead()) {
+			king.kill(false);
 		}
 	}
 
@@ -94,7 +103,7 @@ class script {
 
 		@man = create_entity("dust_man").as_controllable();
 		man.as_dustman().character(king.character());
-		man.x(1000);
+		man.x(1020);
 		man.y(0);
 		man.time_warp(0);
 		man.as_controllable().team(1);
@@ -284,7 +293,7 @@ class Button : trigger_base {
 	float x;
 	float y;
 	uint32 bg = 0xFFAAAAAA;
-	uint32 color = 0xFF777700;
+	uint32 color = 0xFF996600;
 
 	void init(script@ s, scripttrigger@ self) {
 		@this.s = s;
@@ -294,8 +303,9 @@ class Button : trigger_base {
 		@spr = create_sprites();
 		spr.add_sprite_set("dustman");
 		spr.add_sprite_set("props5");
+		spr.add_sprite_set("script");
 	}
-	
+
 	bool hitcheck() {
 		int hits = g.get_entity_collision(y+20, y+80, x+20, x+80, 8);
 		for (int i = 0; i < hits; i++) {
@@ -330,9 +340,9 @@ class Button : trigger_base {
 		g.draw_quad_world(15, 20, false, x, y+75, x+25, y+100, x+100, y+25, x+75, y, bg, bg, bg, bg);
 
 		if (get_activation_state()) {
-			color = 0xFFDDDD00;
+			color = 0xFFFFDD00;
 		} else {
-			color = 0xFF777700;
+			color = 0xFF996600;
 		}
 
 		g.draw_quad_world(15, 20, false, x+27.5, y+5, x+27.5, y+95, x+72.5, y+95, x+72.5, y+5, color, color, color, color);
@@ -517,10 +527,11 @@ class Heavy : Button {
 }
 
 class Advance : Button {
-	// void draw_image() {
-	// 	x = self.x();
-	// 	y = self.y();
-	// }
+	void draw_image() {
+		x = self.x();
+		y = self.y();
+		spr.draw_world(16, 19, "stopwatch", 0, 0, x+13, y+12, 0, 0.3, 0.3, 0xBBFFFFFF);
+	}
 
 	void step() {
 		if (hitcheck()) {
