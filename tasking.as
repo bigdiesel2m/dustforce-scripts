@@ -7,7 +7,6 @@ class script {
 	array <dustman@> players(4, null);
 	controllable@ man = null;
 	dustman@ king;
-	bool frame_advance = true;
 	
 	bool jump_used = false;
 	bool taunt_pressed = false;
@@ -23,26 +22,58 @@ class script {
 	bool dash_active = false;
 	bool light_active = false;
 	bool heavy_active = false;
+	bool advance_active = false;
+
+	int time_main = 0;
+	array <entity@> effects;
 
 
 	script() {
 		@g = get_scene();
 	}
 	
+	bool advance_happening = false;
 	void step(int) {
-		if( frame_advance ) {
+		if( advance_active ) {
+			time_main = 1;
+			man.time_warp(time_main);
+			if(man.hitbox() !is null)
+				man.hitbox().time_warp(time_main);
 			set_intents(@man);
 			standardize_intents(@man);
+			advance_active = false;
+			advance_happening = true;
+		}
+		
+		for(uint i = 0; i < effects.length(); i++) {
+			effects[i].time_warp(time_main);
 		}
 	}
 
 	void step_post(int) {
-		if( frame_advance ) {
+		if( advance_happening ) {
 			standardize_intents_post(@man);
-			frame_advance = false;
+			time_main = 0;
+			man.time_warp(time_main);
+			advance_happening = false;
+			if(man.hitbox() !is null)
+				man.hitbox().time_warp(time_main);
+		}
+		
+		for(uint i = 0; i < effects.length(); i++) {
+			effects[i].time_warp(time_main);
 		}
 	}
-	
+
+	void entity_on_add(entity@ e) {
+		if (e.type_name() == "effect") {
+			string set = e.as_effect().sprite_set();
+			if (set == 'vdustman' || set == 'vdustgirl' || set == 'vdustkid' || set == 'vdustworth') {
+				effects.insertLast(e);
+			}
+		}
+	}
+
 	void on_level_start() {
 		initialize();
 	}
@@ -63,6 +94,7 @@ class script {
 		man.as_dustman().character(king.character());
 		man.x(1000);
 		man.y(0);
+		man.time_warp(0);
 		man.as_controllable().team(1);
 		man.as_dustman().ai_disabled(true);
 		man.as_dustman().auto_respawn(false);
@@ -206,7 +238,6 @@ class Button : trigger_base {
 	scene@ g;
 
 	sprites@ spr;
-	sprites@ spr2;
 	
 	float x;
 	float y;
@@ -219,21 +250,25 @@ class Button : trigger_base {
 		@g = get_scene();
 		
 		@spr = create_sprites();
-		@spr2 = create_sprites();
 		spr.add_sprite_set("dustman");
-		spr2.add_sprite_set("props5");
+		spr.add_sprite_set("props5");
 	}
 	
 	bool hitcheck() {
 		int hits = g.get_entity_collision(y+20, y+80, x+20, x+80, 8);
 		for (int i = 0; i < hits; i++) {
 			hitbox@ hb = g.get_entity_collision_index(i).as_hitbox();
-			if (hb.triggered() && hb.state_timer() == hb.activate_time()) {
+			if (hb.triggered() && hb.state_timer() == hb.activate_time() && hb.owner().is_same(s.king.as_controllable())) {
 				return true;
 			}
 		}
 		return false;
 	}
+
+    void editor_step() {
+        self.x(round(self.x() / 6) * 6);
+        self.y(round(self.y() / 6) * 6);
+    }
 
 	void editor_draw(float subframe) {
 		draw_it();
@@ -279,7 +314,7 @@ class Left : Button {
 	void draw_image() {
 		x = self.x();
 		y = self.y();
-		spr2.draw_world(16, 19, "symbol_1", 0, 0, x-36, y-48, 180, 1, 1, 0xFFFFFFFF);
+		spr.draw_world(16, 19, "symbol_1", 0, 0, x-36, y-48, 180, 1, 1, 0xFFFFFFFF);
 	}
 
 	void step() {
@@ -302,7 +337,7 @@ class Right : Button {
 	void draw_image() {
 		x = self.x();
 		y = self.y();
-		spr2.draw_world(16, 19, "symbol_1", 0, 0, x+135, y+145, 0, 1, 1, 0xFFFFFFFF);
+		spr.draw_world(16, 19, "symbol_1", 0, 0, x+135, y+145, 0, 1, 1, 0xFFFFFFFF);
 	}
 
 	void step() {
@@ -325,7 +360,7 @@ class Up : Button {
 	void draw_image() {
 		x = self.x();
 		y = self.y();
-		spr2.draw_world(16, 19, "symbol_1", 0, 0, x+145, y-35, 270, 1, 1, 0xFFFFFFFF);
+		spr.draw_world(16, 19, "symbol_1", 0, 0, x+145, y-35, 270, 1, 1, 0xFFFFFFFF);
 	}
 
 	void step() {
@@ -348,7 +383,7 @@ class Down : Button {
 	void draw_image() {
 		x = self.x();
 		y = self.y();
-		spr2.draw_world(16, 19, "symbol_1", 0, 0, x-45, y+135, 90, 1, 1, 0xFFFFFFFF);
+		spr.draw_world(16, 19, "symbol_1", 0, 0, x-45, y+135, 90, 1, 1, 0xFFFFFFFF);
 	}
 
 	void step() {
@@ -436,5 +471,22 @@ class Heavy : Button {
 
 	bool get_activation_state() {
 		return s.heavy_active;
+	}
+}
+
+class Advance : Button {
+	// void draw_image() {
+	// 	x = self.x();
+	// 	y = self.y();
+	// }
+
+	void step() {
+		if (hitcheck()) {
+			s.advance_active = !s.advance_active;
+		}
+	}
+
+	bool get_activation_state() {
+		return s.advance_active;
 	}
 }
