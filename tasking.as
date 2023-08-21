@@ -1,6 +1,7 @@
 /* 
 Avant-garde script made for CMJ 6
-Big thanks to Skyhawk for his code and advice
+Big thanks to Skyhawk for his code and advice <3
+http://atlas.dustforce.com/12298/trashkings-first-tas
 */
 const string EMBED_stopwatch = "files/stopwatch.png";
 
@@ -39,6 +40,8 @@ class script {
 		msg.set_string("stopwatch", "stopwatch");
     }
 	
+	// step and step_post handle the freezing and unfreezing of the TAS character
+	// have to use both advance_active and advance_happening because the "advance" command is sent mid-step
 	bool advance_happening = false;
 	void step(int) {
 		if( advance_active ) {
@@ -76,6 +79,7 @@ class script {
 		}
 	}
 
+	// this makes sure attack and dash particles from the player are frozen too
 	void entity_on_add(entity@ e) {
 		if (e.type_name() == "effect") {
 			string set = e.as_effect().sprite_set();
@@ -115,6 +119,7 @@ class script {
 		king.filth_type(0);
 	}
 
+	// this part takes the inputs from the buttons and turns them into "mode 1" intents
 	void set_intents(controllable@ man) {
 		if (man is null)
 			return;

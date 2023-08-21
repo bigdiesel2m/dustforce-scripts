@@ -4,3 +4,6 @@ vfont/out
 t.as
 t2.as
 ct.as
+cloneable_trigger_base.cpp
+layer_dustblocks.cpp
+files*
