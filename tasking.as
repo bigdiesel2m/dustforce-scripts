@@ -159,6 +159,8 @@ class script {
 		} else {
 			man.dash_intent(0);
 		}
+		//bugfix attempt
+		man.fall_intent(0);
 	}
 
 	// all the following code for standardizing intents is courtesy of Skyhawk <3
