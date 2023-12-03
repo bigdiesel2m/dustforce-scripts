@@ -1,15 +1,19 @@
 /* 
-Adjusted version of tasking.as
-Made for the BRB during the Abrupt Showcase
+Adjusted version of tasking.as made for BRB 3
+Uses jump for frame advance, works with hudreplace.as to put frame count in place of combo number
+http://atlas.dustforce.com/12422/tas-king-returns
 */
-
-const string EMBED_stopwatch = "files/stopwatch.png";
 
 class script {
 	scene@ g;
 	array <dustman@> players(4, null);
 	controllable@ man = null;
 	dustman@ king;
+	
+	//HANDLING FOR FRAME COUNT UI
+	canvas@ c;
+	textfield@ label;
+	textfield@ count;
 	
 	bool jump_used = false;
 	bool taunt_pressed = false;
@@ -34,24 +38,32 @@ class script {
 
 	script() {
 		@g = get_scene();
-	}
+		@c = create_canvas(true, 0, 0);
+		c.scale_hud(false);
+		
+		@label = create_textfield();
+		label.set_font("Caracteres", 26);
+		label.align_horizontal(-1);
+		label.align_vertical(1);
+		label.text("FRAME COUNT");
 
-    void build_sprites(message@ msg) {
-		msg.set_string("stopwatch", "stopwatch");
-    }
+		@count = create_textfield();
+		count.text("");
+		count.set_font("Caracteres", 52);
+	}
 	
 	// step and step_post handle the freezing and unfreezing of the TAS character
 	// have to use both advance_active and advance_happening because the "advance" command is sent mid-step
 	bool advance_happening = false;
 	void step(int) {
-		if( advance_active ) {
+		if( king.jump_intent() > 0 ) {
 			time_main = 1;
 			man.time_warp(time_main);
 			if(man.hitbox() !is null)
 				man.hitbox().time_warp(time_main);
 			set_intents(@man);
 			standardize_intents(@man);
-			advance_active = false;
+			king.jump_intent(0);
 			advance_happening = true;
 			frame_count++;
 		}
@@ -77,6 +89,16 @@ class script {
 		for(uint i = 0; i < effects.length(); i++) {
 			effects[i].time_warp(time_main);
 		}
+	}
+
+	void draw(float sub_frame) {
+		//FIND CORNER OF SCREEN
+		float corner_x = (-1.0*(g.hud_screen_width(false)/2)); 
+		float corner_y = (g.hud_screen_height(false)/2);
+
+		c.draw_text(label, corner_x + 15, corner_y - 110.5, 1, 1, -15);
+		count.text(""+frame_count);
+		c.draw_text(count, corner_x + 120, corner_y - 88.5, 1, 1, 0);
 	}
 
 	// this makes sure attack and dash particles from the player are frozen too
@@ -107,8 +129,8 @@ class script {
 
 		@man = create_entity("dust_man").as_controllable();
 		man.as_dustman().character(king.character());
-		man.x(1020);
-		man.y(0);
+		man.x(936);
+		man.y(-384);
 		man.time_warp(0);
 		man.as_controllable().team(1);
 		man.as_dustman().ai_disabled(true);
@@ -159,6 +181,7 @@ class script {
 		} else {
 			man.dash_intent(0);
 		}
+		man.fall_intent(0);
 	}
 
 	// all the following code for standardizing intents is courtesy of Skyhawk <3
@@ -247,27 +270,22 @@ class script {
 	}
 }
 
-class Leaderboard : trigger_base {
+class Note : trigger_base {
 	script@ s;
 	scripttrigger@ self;
 	scene@ g;
-	textfield@ tf;
-	textfield@ tf2;
+	textfield@ note;
 			
 	void init(script@ s, scripttrigger@ self) {
 		@this.s = s;
 		@this.self = @self;
 		@g = get_scene();
 
-		@tf = create_textfield();
-		tf.text("FRAME COUNT");
-		tf.set_font("ProximaNovaReg", 72);
-		tf.colour(0xFFFFFFFF);
+		@note = create_textfield();
+		note.set_font("Caracteres", 36);
+		note.text("Jump to\nadvance\nframe!");
+		note.colour(0xFF000000);
 
-		@tf2 = create_textfield();
-		tf2.text("");
-		tf2.set_font("ProximaNovaReg", 100);
-		tf2.colour(0xFFFFFFFF);
 	}
 
 	void editor_draw(float subframe) {
@@ -281,9 +299,8 @@ class Leaderboard : trigger_base {
 	void draw_it() {
 		float x = self.x();
 		float y = self.y();
-		tf.draw_world(20, 20, x, y, 1, 1, 0);
-		tf2.text(""+s.frame_count);
-		tf2.draw_world(20, 20, x-120, y+120, 1, 1, 0);
+		g.draw_quad_world(20, 20, false, x, y, x+172.3, y+30.4, x+142, y+202.7, x-30.4, y+172.3, 0xFFF1E288, 0xFFEFE084, 0xFFF2EBB3, 0xFFF1EB8E);
+		note.draw_world(20, 20, x+70, y+95, 1, 1, 10);
 	}
 }
 
@@ -308,7 +325,6 @@ class Button : trigger_base {
 		@spr = create_sprites();
 		spr.add_sprite_set("dustman");
 		spr.add_sprite_set("props5");
-		spr.add_sprite_set("script");
 	}
 
 	bool hitcheck() {
@@ -339,21 +355,27 @@ class Button : trigger_base {
 		x = self.x();
 		y = self.y();
 
-		g.draw_quad_world(15, 20, false, x+25, y, x+25, y+100, x+75, y+100, x+75, y, bg, bg, bg, bg);
-		g.draw_quad_world(15, 20, false, x, y+25, x, y+75, x+100, y+75, x+100, y+25, bg, bg, bg, bg);
-		g.draw_quad_world(15, 20, false, x+25, y, x, y+25, x+75, y+100, x+100, y+75, bg, bg, bg, bg);
-		g.draw_quad_world(15, 20, false, x, y+75, x+25, y+100, x+100, y+25, x+75, y, bg, bg, bg, bg);
+		//EDGES OF THE OCTAGONAL BUTTON
+		g.draw_quad_world(15, 20, false, x+25, y, x+25, y+5, x+75, y+5, x+75, y, bg, bg, bg, bg);
+		g.draw_quad_world(15, 20, false, x+25, y+95, x+25, y+100, x+75, y+100, x+75, y+95, bg, bg, bg, bg);
+		g.draw_quad_world(15, 20, false, x, y+25, x, y+75, x+5, y+75, x+5, y+25, bg, bg, bg, bg);
+		g.draw_quad_world(15, 20, false, x+95, y+25, x+95, y+75, x+100, y+75, x+100, y+25, bg, bg, bg, bg);
+		g.draw_quad_world(15, 20, false, x+25, y, x, y+25, x+5, y+27.5, x+27.5, y+5, bg, bg, bg, bg);
+		g.draw_quad_world(15, 20, false, x+95, y+72.5, x+72.5, y+95, x+75, y+100, x+100, y+75, bg, bg, bg, bg);
+		g.draw_quad_world(15, 20, false, x, y+75, x+25, y+100, x+27.5, y+95, x+5, y+72.5, bg, bg, bg, bg);
+		g.draw_quad_world(15, 20, false, x+72.5, y+5, x+95, y+27.5, x+100, y+25, x+75, y, bg, bg, bg, bg);
 
 		if (get_activation_state()) {
-			color = 0xFFFFDD00;
+			color = 0xBBFFDD00;
 		} else {
-			color = 0xFF996600;
+			color = 0xBB996600;
 		}
 
+		//FILL FOR THE OCTAGONAL BUTTON
+		g.draw_quad_world(15, 20, false, x+27.5, y+5, x+5, y+27.5, x+5, y+72.5, x+27.5, y+95, color, color, color, color);
 		g.draw_quad_world(15, 20, false, x+27.5, y+5, x+27.5, y+95, x+72.5, y+95, x+72.5, y+5, color, color, color, color);
-		g.draw_quad_world(15, 20, false, x+5, y+27.5, x+5, y+72.5, x+95, y+72.5, x+95, y+27.5, color, color, color, color);
-		g.draw_quad_world(15, 20, false, x+27.5, y+5, x+5, y+27.5, x+72.5, y+95, x+95, y+72.5, color, color, color, color);
-		g.draw_quad_world(15, 20, false, x+5, y+72.5, x+27.5, y+95, x+95, y+27.5, x+72.5, y+5, color, color, color, color);
+		g.draw_quad_world(15, 20, false, x+72.5, y+5, x+95, y+27.5, x+95, y+72.5, x+72.5, y+95, color, color, color, color);
+
 
 		draw_image();
 	}
@@ -528,23 +550,5 @@ class Heavy : Button {
 
 	bool get_activation_state() {
 		return s.heavy_active;
-	}
-}
-
-class Advance : Button {
-	void draw_image() {
-		x = self.x();
-		y = self.y();
-		spr.draw_world(16, 19, "stopwatch", 0, 0, x+13, y+12, 0, 0.3, 0.3, 0xBBFFFFFF);
-	}
-
-	void step() {
-		if (hitcheck()) {
-			s.advance_active = !s.advance_active;
-		}
-	}
-
-	bool get_activation_state() {
-		return s.advance_active;
 	}
 }
