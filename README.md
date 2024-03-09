@@ -16,3 +16,4 @@
 [cts.as](cts.as) - generic custom tile sprites project, based on experiments with [v.as](v.as)  
 [rainbow.as](rainbow.as) - experimenting with super-styled rainbow trail  
 [waves.as](waves.as) - wavey attack script made for CMJ 3, used in [Hollow Elegy](http://atlas.dustforce.com/11175/hollow-elegy)  
+[globalprops.as](globalprops.as) - script based on extraprops that places sprites in a global array, for better loading especially in parallax layers
