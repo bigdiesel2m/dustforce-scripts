@@ -8,3 +8,5 @@ cloneable_trigger_base.cpp
 layer_dustblocks.cpp
 files*
 leaffilth.as
+spotlight.as
+gl.as
